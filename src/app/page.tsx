@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const thinkingStages = [
   "관찰",
   "정의",
@@ -37,6 +39,13 @@ export default function Home() {
               자신의 판단을 먼저 기록하고, 근거와 변화를 끝까지 보존하는 사고
               학습 공간입니다.
             </p>
+            <Link
+              className="mt-9 inline-flex min-h-12 items-center gap-8 rounded-full bg-[var(--ink)] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[var(--accent)]"
+              href="/practice"
+            >
+              실무 문제로 연습하기
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
 
           <aside
@@ -65,8 +74,8 @@ export default function Home() {
         </div>
 
         <footer className="flex flex-col gap-2 border-t border-[var(--line)] pt-5 text-xs leading-5 text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
-          <p>Task 00 · 애플리케이션 기반 구성 완료</p>
-          <p>제품 기능은 다음 Task부터 순서대로 구현합니다.</p>
+          <p>사용자가 먼저 쓰고, AI는 그다음에 질문합니다.</p>
+          <p>Guided Practice · Olive Young O2O</p>
         </footer>
       </section>
     </main>

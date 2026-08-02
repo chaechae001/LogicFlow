@@ -53,3 +53,15 @@ Repository 계약은 각 Task에서 실제 구현하는 기능만 포함해 확�
 
 ## D-018
 Thinking Case 생성 시 8개 CaseStep을 함께 만들고 첫 단계만 `writing`으로 시작한다. LocalStorageRepository의 ID 생성기와 시계는 주입 가능하게 해 브라우저 API 의존성과 테스트 결정성을 분리한다.
+
+## D-019
+Practice Library와 Case 상세는 Task 01의 검증된 fixture catalog를 유일한 데이터 원천으로 사용한다. 화면용 올리브영 사실이나 예시 답안을 별도로 복제하지 않는다.
+
+## D-020
+로그인 도입 전 로컬 Thinking Case의 userId는 `local-user`로 고정한다. 이는 한 브라우저의 단일 사용자만 구분하기 위한 임시 식별자이며 인증이나 개인 식별을 의미하지 않는다.
+
+## D-021
+Case Start 화면은 localStorage를 직접 사용하지 않고 브라우저 Repository factory가 제공하는 `ThinkingCaseRepository`를 통해서만 Case를 생성한다. 생성 후 Repository가 반환한 Case ID와 currentStage로 다음 경로를 계산한다.
+
+## D-022
+Task 03에서는 생성 후 경로가 404가 되지 않도록 최소 전환 화면만 제공한다. 3열 레이아웃, 단계 내비게이션, 저장 상태, Soft Gate, AI 패널은 Task 04의 Workspace Shell에서 구현한다.
