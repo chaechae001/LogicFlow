@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --canvas: #e9eef1;
+  --surface: #f8fafb;
+  --ink: #172a3a;
+  --muted: #5f7180;
+  --accent: #176b87;
+  --line: #d6e0e5;
+  --line-strong: #a9bdc7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+}
+
+body {
+  margin: 0;
+  background:
+    linear-gradient(rgba(23, 107, 135, 0.045) 1px, transparent 1px),
+    var(--canvas);
+  background-size: 100% 2rem;
+  color: var(--ink);
+  font-family: "Pretendard", "SUIT", "Noto Sans KR", "Apple SD Gothic Neo",
+    sans-serif;
+}
+
+::selection {
+  background: #bcdce5;
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

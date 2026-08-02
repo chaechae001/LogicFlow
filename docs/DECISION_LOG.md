@@ -23,3 +23,12 @@ Report는 학습 기록, Portfolio는 외부 역량 증명으로 분리한다.
 
 ## D-008
 Primary Framework는 Customer Journey Map, 보조는 MECE Issue Tree, Hypothesis–Metric Matrix, Decision Matrix, SCQA/Minto다.
+
+## D-009
+Task 00의 웹 기반은 Next.js 16 App Router, React 19, strict TypeScript, Tailwind CSS 4, npm으로 구성한다.
+
+## D-010
+소스 경계는 `app`, `components`, `domain`, `features`, `lib`, `repositories`, `test`로 시작한다. Task 00에서는 경계만 만들고 도메인 타입과 저장소 계약은 후속 Task에서 구현한다.
+
+## D-011
+단위 테스트 러너는 Vitest를 사용하고, 모든 Task에서 lint, typecheck, test, production build를 독립 스크립트로 검증할 수 있게 한다.

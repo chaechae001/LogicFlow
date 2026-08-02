@@ -1,0 +1,74 @@
+const thinkingStages = [
+  "관찰",
+  "정의",
+  "구조화",
+  "가설",
+  "검증",
+  "비교",
+  "실행",
+  "회고",
+] as const;
+
+export default function Home() {
+  return (
+    <main className="min-h-screen px-6 py-8 sm:px-10 lg:px-16 lg:py-12">
+      <section className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-7xl flex-col rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-7 shadow-[0_24px_80px_rgba(23,42,58,0.08)] sm:p-10 lg:p-14">
+        <header className="flex items-center justify-between gap-6 border-b border-[var(--line)] pb-5">
+          <p className="text-sm font-bold tracking-[-0.02em] text-[var(--ink)]">
+            Thinking Flow
+          </p>
+          <p className="text-xs font-semibold tracking-[0.12em] text-[var(--muted)] uppercase">
+            Repository bootstrap
+          </p>
+        </header>
+
+        <div className="grid flex-1 items-center gap-14 py-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:py-20">
+          <div>
+            <p className="mb-6 text-sm font-semibold text-[var(--accent)]">
+              먼저 쓰고, 그다음 점검합니다.
+            </p>
+            <h1 className="max-w-4xl font-serif text-[clamp(3rem,8vw,7.5rem)] leading-[0.94] font-semibold tracking-[-0.065em] text-balance text-[var(--ink)]">
+              답보다 먼저,
+              <br />
+              생각의 흐름.
+            </h1>
+            <p className="mt-9 max-w-xl text-base leading-8 text-[var(--muted)] sm:text-lg">
+              Thinking Flow는 AI가 답을 대신 만드는 곳이 아닙니다. 사용자가
+              자신의 판단을 먼저 기록하고, 근거와 변화를 끝까지 보존하는 사고
+              학습 공간입니다.
+            </p>
+          </div>
+
+          <aside
+            aria-label="Thinking Flow의 8단계 사고 흐름"
+            className="relative border-l border-[var(--line-strong)] pl-8 sm:pl-10"
+          >
+            <p className="mb-7 text-xs font-bold tracking-[0.16em] text-[var(--muted)] uppercase">
+              8-stage practice
+            </p>
+            <ol className="space-y-4">
+              {thinkingStages.map((stage, index) => (
+                <li
+                  className="grid grid-cols-[2rem_1fr] items-center gap-4 text-sm"
+                  key={stage}
+                >
+                  <span className="font-mono text-xs text-[var(--accent)]">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="border-b border-[var(--line)] pb-4 font-semibold text-[var(--ink)]">
+                    {stage}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </aside>
+        </div>
+
+        <footer className="flex flex-col gap-2 border-t border-[var(--line)] pt-5 text-xs leading-5 text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
+          <p>Task 00 · 애플리케이션 기반 구성 완료</p>
+          <p>제품 기능은 다음 Task부터 순서대로 구현합니다.</p>
+        </footer>
+      </section>
+    </main>
+  );
+}
