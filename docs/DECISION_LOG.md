@@ -32,3 +32,12 @@ Task 00의 웹 기반은 Next.js 16 App Router, React 19, strict TypeScript, Tai
 
 ## D-011
 단위 테스트 러너는 Vitest를 사용하고, 모든 Task에서 lint, typecheck, test, production build를 독립 스크립트로 검증할 수 있게 한다.
+
+## D-012
+도메인 식별자는 문자열, 저장·전송되는 날짜와 시간은 시간대 오프셋을 포함한 ISO 8601 문자열로 표현한다. 브라우저 저장소와 향후 원격 저장소 사이에서 직렬화 의미가 달라지지 않게 하기 위함이다.
+
+## D-013
+도메인 타입은 Zod 스키마에서 추론한다. 문서에 허용 값이 명시된 상태와 관계만 enum으로 제한하고, 아직 값 체계가 정해지지 않은 필드는 후속 기능 Task 전까지 문자열로 유지한다.
+
+## D-014
+올리브영 fixture의 `knownFacts`는 검증된 내부 사실이 아니라 Practice Case가 제공하는 연습 전제로 명시한다. 실제 고객 행동과 원인, 개선 효과는 `unknowns`와 후속 가설·검증 과정에 남긴다.
