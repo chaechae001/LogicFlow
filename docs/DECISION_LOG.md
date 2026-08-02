@@ -41,3 +41,15 @@ Task 00의 웹 기반은 Next.js 16 App Router, React 19, strict TypeScript, Tai
 
 ## D-014
 올리브영 fixture의 `knownFacts`는 검증된 내부 사실이 아니라 Practice Case가 제공하는 연습 전제로 명시한다. 실제 고객 행동과 원인, 개선 효과는 `unknowns`와 후속 가설·검증 과정에 남긴다.
+
+## D-015
+초기 로컬 저장소는 `thinking-flow:repository` 키 아래 `schemaVersion: 1`과 ThinkingCase, CaseStep, FieldResponse, ResponseVersion 배열을 가진 단일 JSON 문서로 저장한다. 읽기와 쓰기 모두 Zod로 검증하며 지원하지 않는 버전은 명시적으로 거부한다.
+
+## D-016
+사용자 응답 수정은 기존 ResponseVersion을 변경하지 않고 새 버전을 append한다. FieldResponse는 최신 버전 ID만 가리키고, 새 버전은 `previousVersionId`로 직전 버전을 연결해 사고 이력을 보존한다.
+
+## D-017
+Repository 계약은 각 Task에서 실제 구현하는 기능만 포함해 확장한다. Task 02에서는 create/get/list/saveResponseVersion만 제공하고 Journey, Hypothesis, Validation, Alternative, Action Plan 저장 계약은 해당 기능 Task에서 추가한다.
+
+## D-018
+Thinking Case 생성 시 8개 CaseStep을 함께 만들고 첫 단계만 `writing`으로 시작한다. LocalStorageRepository의 ID 생성기와 시계는 주입 가능하게 해 브라우저 API 의존성과 테스트 결정성을 분리한다.
