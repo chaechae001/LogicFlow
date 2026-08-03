@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { oliveyoungPracticeCase } from "../../domain";
 import {
-  LocalStorageRepository,
-  type LocalStorageRepositoryDependencies,
+  V2LocalStorageRepository,
+  type V2LocalStorageRepositoryDependencies,
   type StorageLike,
 } from "../../repositories";
 import {
@@ -35,13 +35,13 @@ describe("startPracticeCase", () => {
     });
   });
 
-  it("LocalStorageRepository로 Case를 생성하고 다음 경로를 반환한다", async () => {
+  it("V2LocalStorageRepository로 Case를 생성하고 다음 경로를 반환한다", async () => {
     let id = 0;
-    const dependencies: LocalStorageRepositoryDependencies = {
+    const dependencies: V2LocalStorageRepositoryDependencies = {
       createId: () => `case-start-${++id}`,
       now: () => "2026-08-02T12:00:00.000Z",
     };
-    const repository = new LocalStorageRepository(
+    const repository = new V2LocalStorageRepository(
       new MemoryStorage(),
       dependencies,
     );

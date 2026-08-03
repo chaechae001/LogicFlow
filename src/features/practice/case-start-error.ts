@@ -27,7 +27,7 @@ export function getCaseStartErrorMessage(
       canResetLocalData: true,
       kind: "unsupported_storage_version",
       message:
-        "이전에 저장된 데이터가 현재 버전과 호환되지 않습니다. 새로운 10단계 구조를 사용하려면 기존 로컬 데이터를 초기화해야 합니다.",
+        "이전에 저장된 V2 데이터가 현재 버전과 호환되지 않습니다. 계속하려면 V2 로컬 데이터만 초기화해야 합니다.",
     };
   }
 
@@ -36,7 +36,7 @@ export function getCaseStartErrorMessage(
       canResetLocalData: true,
       kind: "invalid_stored_data",
       message:
-        "이전에 저장된 데이터가 현재 구조와 호환되지 않습니다. 기존 로컬 데이터를 초기화한 후 다시 시작해주세요.",
+        "이전에 저장된 V2 데이터가 현재 구조와 호환되지 않습니다. V2 로컬 데이터를 초기화한 후 다시 시작해주세요.",
     };
   }
 
