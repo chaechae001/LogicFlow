@@ -7,7 +7,7 @@ import { findPracticeCase } from "../../../features/practice/practice-case-catal
 
 export const metadata: Metadata = {
   title: "Case 시작 | Thinking Flow",
-  description: "Practice Case를 읽고 내 첫 생각부터 기록합니다.",
+  description: "Practice Case를 확인하고 10단계 사고 훈련을 시작합니다.",
 };
 
 interface NewCasePageProps {

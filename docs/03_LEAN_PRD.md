@@ -16,7 +16,7 @@ AI 사용자는 빠르게 산출물을 만들 수 있지만, 문제 정의·가�
 
 1. Practice Case 선택
 2. Thinking Case 생성
-3. 8단계 Guided Workspace
+3. 10단계 Guided Workspace와 단계별 자유 작성/구조화 입력 선택
 4. 자동 저장과 재개
 5. Response Version
 6. Hypothesis Card
@@ -26,6 +26,8 @@ AI 사용자는 빠르게 산출물을 만들 수 있지만, 문제 정의·가�
 10. Logic Flow
 11. Case Report
 12. Portfolio Preview
+
+Practice Case 시작 시 별도의 사전 작성 양식을 두지 않는다. 사용자는 문제를 확인한 뒤 Case를 생성하고 10단계 Workspace 안에서 자유 작성 또는 구조화 입력을 시작한다.
 
 ## P1 기능
 

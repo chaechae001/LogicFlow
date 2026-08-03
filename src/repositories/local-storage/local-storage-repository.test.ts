@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import type { CreateCaseInput } from "../thinking-case-repository";
 import {
+  InvalidStoredDataError,
   LocalStorageRepository,
+  StorageAccessError,
   ThinkingCaseNotFoundError,
   UnsupportedStorageVersionError,
   type LocalStorageRepositoryDependencies,
@@ -32,9 +34,6 @@ const createCaseInput: CreateCaseInput = {
   origin: "practice_library",
   title: "올리브영 O2O 서비스 개선",
   aiMode: "guide",
-  initialImpression: "상품을 다시 찾는 과정이 길 수 있다.",
-  initialSolutionIdea: "매장에서 상품을 저장하는 방법을 떠올렸다.",
-  decisionQuestion: "어느 연결 지점을 먼저 검증해야 하는가?",
 };
 
 function createTestDependencies(): {
@@ -70,20 +69,20 @@ describe("LocalStorageRepository", () => {
     );
   });
 
-  it("Thinking Case와 8개 초기 단계를 생성하고 다시 조회한다", async () => {
+  it("Thinking Case와 10개 초기 단계를 생성하고 다시 조회한다", async () => {
     const createdCase = await repository.createCase(createCaseInput);
     const bundle = await repository.getCase(createdCase.id);
     const summaries = await repository.listCases();
 
     expect(createdCase).toMatchObject({
       status: "in_progress",
-      currentStage: "fact_interpretation",
+      currentStage: "context",
       completedAt: null,
     });
     expect(bundle?.thinkingCase).toEqual(createdCase);
-    expect(bundle?.steps).toHaveLength(8);
+    expect(bundle?.steps).toHaveLength(10);
     expect(bundle?.steps[0]).toMatchObject({
-      stage: "fact_interpretation",
+      stage: "context",
       status: "writing",
     });
     expect(bundle?.steps.slice(1).every((step) => step.status === "not_started")).toBe(
@@ -94,7 +93,7 @@ describe("LocalStorageRepository", () => {
     ]);
   });
 
-  it("schemaVersion 1을 포함한 단일 JSON 문서로 저장하고 새 인스턴스에서 읽는다", async () => {
+  it("schemaVersion 2를 포함한 단일 JSON 문서로 저장하고 새 인스턴스에서 읽는다", async () => {
     const createdCase = await repository.createCase(createCaseInput);
     const rawData = storage.getItem(THINKING_FLOW_STORAGE_KEY);
 
@@ -112,7 +111,7 @@ describe("LocalStorageRepository", () => {
     const createdCase = await repository.createCase(createCaseInput);
     const firstVersion = await repository.saveResponseVersion({
       caseId: createdCase.id,
-      stage: "fact_interpretation",
+      stage: "observation",
       fieldKey: "known_facts",
       contentJson: ["첫 번째 생각"],
       authorType: "user",
@@ -121,7 +120,7 @@ describe("LocalStorageRepository", () => {
     setNow("2026-08-02T10:05:00.000Z");
     const secondVersion = await repository.saveResponseVersion({
       caseId: createdCase.id,
-      stage: "fact_interpretation",
+      stage: "observation",
       fieldKey: "known_facts",
       contentJson: ["수정한 생각"],
       authorType: "user",
@@ -150,14 +149,14 @@ describe("LocalStorageRepository", () => {
     const createdCase = await repository.createCase(createCaseInput);
     const firstFieldVersion = await repository.saveResponseVersion({
       caseId: createdCase.id,
-      stage: "fact_interpretation",
+      stage: "observation",
       fieldKey: "known_facts",
       contentJson: ["확인한 내용"],
       authorType: "user",
     });
     const secondFieldVersion = await repository.saveResponseVersion({
       caseId: createdCase.id,
-      stage: "fact_interpretation",
+      stage: "observation",
       fieldKey: "interpretation",
       contentJson: "나의 해석",
       authorType: "user",
@@ -184,14 +183,143 @@ describe("LocalStorageRepository", () => {
     expect(storage.getItem(THINKING_FLOW_STORAGE_KEY)).toBeNull();
   });
 
-  it("지원하지 않는 schemaVersion을 명시적으로 거부한다", async () => {
+  it("기존 schemaVersion 1을 migration 없이 명시적으로 거부한다", async () => {
     storage.setItem(
       THINKING_FLOW_STORAGE_KEY,
-      JSON.stringify({ schemaVersion: 2 }),
+      JSON.stringify({ schemaVersion: 1 }),
     );
 
     await expect(repository.listCases()).rejects.toBeInstanceOf(
       UnsupportedStorageVersionError,
     );
+  });
+
+  it.each([
+    {
+      name: "필수 배열이 누락된 schemaVersion 2 데이터",
+      value: {
+        schemaVersion: 2,
+        thinkingCases: [],
+      },
+    },
+    {
+      name: "과거 8단계 stage key가 포함된 schemaVersion 2 데이터",
+      value: {
+        schemaVersion: 2,
+        thinkingCases: [],
+        caseSteps: [
+          {
+            id: "legacy-step",
+            caseId: "legacy-case",
+            stage: "fact_interpretation",
+            status: "writing",
+            startedAt: "2026-08-02T10:00:00.000Z",
+            completedAt: null,
+          },
+        ],
+        fieldResponses: [],
+        responseVersions: [],
+      },
+    },
+    {
+      name: "삭제된 ThinkingCase 필드가 남은 schemaVersion 2 데이터",
+      value: {
+        schemaVersion: 2,
+        thinkingCases: [
+          {
+            id: "legacy-case",
+            userId: "local-user",
+            practiceCaseId: "practice-oliveyoung-o2o-001",
+            origin: "practice_library",
+            title: "과거 Case",
+            status: "in_progress",
+            currentStage: "context",
+            aiMode: "guide",
+            initialImpression: "과거 첫 생각",
+            initialSolutionIdea: "과거 해결안",
+            decisionQuestion: "과거 의사결정 질문",
+            finalTopMessage: "",
+            createdAt: "2026-08-02T10:00:00.000Z",
+            updatedAt: "2026-08-02T10:00:00.000Z",
+            completedAt: null,
+          },
+        ],
+        caseSteps: [],
+        fieldResponses: [],
+        responseVersions: [],
+      },
+    },
+  ])("$name를 InvalidStoredDataError로 거부한다", async ({ value }) => {
+    storage.setItem(THINKING_FLOW_STORAGE_KEY, JSON.stringify(value));
+
+    await expect(repository.listCases()).rejects.toBeInstanceOf(
+      InvalidStoredDataError,
+    );
+  });
+
+  it("명시적인 reset 호출에서만 기존 데이터를 빈 schemaVersion 2 문서로 초기화한다", async () => {
+    storage.setItem(
+      THINKING_FLOW_STORAGE_KEY,
+      JSON.stringify({ schemaVersion: 1, legacyData: true }),
+    );
+
+    await repository.resetLocalData();
+
+    const rawData = storage.getItem(THINKING_FLOW_STORAGE_KEY);
+    expect(localStorageDataSchema.parse(JSON.parse(rawData ?? ""))).toEqual({
+      schemaVersion: 2,
+      thinkingCases: [],
+      caseSteps: [],
+      fieldResponses: [],
+      responseVersions: [],
+    });
+  });
+
+  it("손상된 데이터는 먼저 parse하지 않고 reset한 뒤 새 Case를 생성할 수 있다", async () => {
+    storage.setItem(
+      THINKING_FLOW_STORAGE_KEY,
+      JSON.stringify({ schemaVersion: 2, thinkingCases: [] }),
+    );
+
+    await repository.resetLocalData();
+
+    const rawData = storage.getItem(THINKING_FLOW_STORAGE_KEY);
+    expect(localStorageDataSchema.parse(JSON.parse(rawData ?? ""))).toEqual({
+      schemaVersion: 2,
+      thinkingCases: [],
+      caseSteps: [],
+      fieldResponses: [],
+      responseVersions: [],
+    });
+
+    const createdCase = await repository.createCase(createCaseInput);
+    const bundle = await repository.getCase(createdCase.id);
+    expect(createdCase.currentStage).toBe("context");
+    expect(bundle?.steps).toHaveLength(10);
+  });
+
+  it("브라우저 저장소 읽기와 쓰기 실패를 StorageAccessError로 구분한다", async () => {
+    const readFailureRepository = new LocalStorageRepository({
+      getItem: () => {
+        throw new Error("read denied");
+      },
+      setItem: () => undefined,
+    });
+    const writeFailureRepository = new LocalStorageRepository(
+      {
+        getItem: () => null,
+        setItem: () => {
+          throw new Error("write denied");
+        },
+      },
+      createTestDependencies().dependencies,
+    );
+
+    await expect(readFailureRepository.listCases()).rejects.toBeInstanceOf(
+      StorageAccessError,
+    );
+    await expect(
+      writeFailureRepository.createCase(createCaseInput),
+    ).rejects.toBeInstanceOf(StorageAccessError);
   });
 });

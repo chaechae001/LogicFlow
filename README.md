@@ -34,6 +34,18 @@ npm.cmd install
 npm.cmd run dev
 ```
 
+## 개발용 로컬 데이터 초기화
+
+현재 localStorage는 `schemaVersion: 2`를 사용하며 기존 version 1 데이터를 자동 변환하지 않습니다. Case 시작 화면에서 version 불일치 또는 현재 구조와 맞지 않는 저장 데이터가 감지되면 데이터 삭제 안내와 함께 `기존 로컬 데이터 초기화` 버튼을 제공합니다. 사용자가 직접 누르기 전에는 기존 데이터를 변경하지 않습니다.
+
+개발자 도구에서 직접 초기화해야 할 때는 Console에서 다음 명령을 실행한 뒤 페이지를 새로고침합니다.
+
+```js
+window.localStorage.removeItem("thinking-flow:repository");
+```
+
+코드에서는 `LocalStorageRepository.resetLocalData()`를 명시적으로 호출해 빈 version 2 문서로 초기화할 수 있습니다. 어느 방식도 자동으로 실행되지 않으며, 초기화 전 기존 데이터는 덮어쓰지 않습니다.
+
 ## 품질 검사
 
 ```bash

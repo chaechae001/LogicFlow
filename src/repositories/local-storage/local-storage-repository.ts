@@ -35,9 +35,19 @@ export interface LocalStorageRepositoryDependencies {
 }
 
 export class LocalStorageRepositoryError extends Error {
-  constructor(message: string) {
+  readonly originalCause?: unknown;
+
+  constructor(message: string, originalCause?: unknown) {
     super(message);
     this.name = "LocalStorageRepositoryError";
+    this.originalCause = originalCause;
+  }
+}
+
+export class StorageAccessError extends LocalStorageRepositoryError {
+  constructor(message: string, originalCause?: unknown) {
+    super(message, originalCause);
+    this.name = "StorageAccessError";
   }
 }
 
@@ -45,6 +55,13 @@ export class UnsupportedStorageVersionError extends LocalStorageRepositoryError 
   constructor(version: number) {
     super(`지원하지 않는 localStorage schemaVersion입니다: ${version}`);
     this.name = "UnsupportedStorageVersionError";
+  }
+}
+
+export class InvalidStoredDataError extends LocalStorageRepositoryError {
+  constructor(message: string, originalCause?: unknown) {
+    super(message, originalCause);
+    this.name = "InvalidStoredDataError";
   }
 }
 
@@ -69,13 +86,24 @@ const defaultDependencies: LocalStorageRepositoryDependencies = {
 };
 
 function getBrowserLocalStorage(): StorageLike {
-  if (typeof globalThis.localStorage === "undefined") {
-    throw new LocalStorageRepositoryError(
-      "브라우저 localStorage를 사용할 수 없는 환경입니다.",
+  try {
+    if (typeof globalThis.localStorage === "undefined") {
+      throw new StorageAccessError(
+        "브라우저 localStorage를 사용할 수 없는 환경입니다.",
+      );
+    }
+
+    return globalThis.localStorage;
+  } catch (error) {
+    if (error instanceof StorageAccessError) {
+      throw error;
+    }
+
+    throw new StorageAccessError(
+      "브라우저 localStorage에 접근할 수 없습니다.",
+      error,
     );
   }
-
-  return globalThis.localStorage;
 }
 
 export class LocalStorageRepository implements ThinkingCaseRepository {
@@ -103,9 +131,6 @@ export class LocalStorageRepository implements ThinkingCaseRepository {
       status: "in_progress",
       currentStage: THINKING_STAGES[0],
       aiMode: parsedInput.aiMode,
-      initialImpression: parsedInput.initialImpression,
-      initialSolutionIdea: parsedInput.initialSolutionIdea,
-      decisionQuestion: parsedInput.decisionQuestion,
       finalTopMessage: "",
       createdAt: now,
       updatedAt: now,
@@ -181,6 +206,10 @@ export class LocalStorageRepository implements ThinkingCaseRepository {
         currentStage: thinkingCase.currentStage,
         updatedAt: thinkingCase.updatedAt,
       }));
+  }
+
+  async resetLocalData(): Promise<void> {
+    this.writeData(createEmptyLocalStorageData());
   }
 
   async saveResponseVersion(
@@ -261,7 +290,15 @@ export class LocalStorageRepository implements ThinkingCaseRepository {
   }
 
   private readData(): LocalStorageData {
-    const rawData = this.storage.getItem(THINKING_FLOW_STORAGE_KEY);
+    let rawData: string | null;
+    try {
+      rawData = this.storage.getItem(THINKING_FLOW_STORAGE_KEY);
+    } catch (error) {
+      throw new StorageAccessError(
+        "브라우저 localStorage에서 Thinking Flow 데이터를 읽을 수 없습니다.",
+        error,
+      );
+    }
 
     if (rawData === null) {
       return createEmptyLocalStorageData();
@@ -270,16 +307,18 @@ export class LocalStorageRepository implements ThinkingCaseRepository {
     let parsedData: unknown;
     try {
       parsedData = JSON.parse(rawData);
-    } catch {
-      throw new LocalStorageRepositoryError(
+    } catch (error) {
+      throw new InvalidStoredDataError(
         "localStorage의 Thinking Flow 데이터를 JSON으로 읽을 수 없습니다.",
+        error,
       );
     }
 
     const envelopeResult = storageEnvelopeSchema.safeParse(parsedData);
     if (!envelopeResult.success) {
-      throw new LocalStorageRepositoryError(
+      throw new InvalidStoredDataError(
         "localStorage 데이터에 유효한 schemaVersion이 없습니다.",
+        envelopeResult.error,
       );
     }
 
@@ -291,8 +330,9 @@ export class LocalStorageRepository implements ThinkingCaseRepository {
 
     const dataResult = localStorageDataSchema.safeParse(parsedData);
     if (!dataResult.success) {
-      throw new LocalStorageRepositoryError(
+      throw new InvalidStoredDataError(
         "localStorage의 Thinking Flow 데이터 형태가 유효하지 않습니다.",
+        dataResult.error,
       );
     }
 
@@ -301,9 +341,16 @@ export class LocalStorageRepository implements ThinkingCaseRepository {
 
   private writeData(data: LocalStorageData): void {
     const validatedData = localStorageDataSchema.parse(data);
-    this.storage.setItem(
-      THINKING_FLOW_STORAGE_KEY,
-      JSON.stringify(validatedData),
-    );
+    try {
+      this.storage.setItem(
+        THINKING_FLOW_STORAGE_KEY,
+        JSON.stringify(validatedData),
+      );
+    } catch (error) {
+      throw new StorageAccessError(
+        "브라우저 localStorage에 Thinking Flow 데이터를 저장할 수 없습니다.",
+        error,
+      );
+    }
   }
 }

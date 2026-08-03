@@ -1,7 +1,7 @@
 # Implementation Status
 
 ## Current phase
-Task 03 complete — Practice Library and Case Start.
+Task 04 complete — ten-stage Workspace revision and browser re-review passed.
 
 ## Completed
 - Product Core
@@ -17,36 +17,52 @@ Task 03 complete — Practice Library and Case Start.
 - ESLint, typecheck, Vitest, and build scripts
 - Base source folder boundaries and bootstrap screen
 - Local setup and verification instructions
-- Eight-stage `ThinkingStage` domain contract
+- Ten-stage `ThinkingStage` domain contract and `WritingMode` domain type
 - Core MVP entity types and Zod validation schemas
 - Olive Young O2O Practice Case fixture
 - Fixture validation and stage-order tests
 - `ThinkingCaseRepository` contract for create/get/list/version operations
-- Versioned localStorage document with `schemaVersion: 1`
+- Versioned localStorage document with `schemaVersion: 2`; version 1 is rejected without automatic migration
 - Local Thinking Case creation, retrieval, and summary listing
 - Append-only ResponseVersion persistence with current-version pointers
 - Repository unit tests with an in-memory Storage adapter
 - `/practice` Practice Library with the Olive Young O2O fixture
-- `/cases/new` Practice Case context and user-first start form
+- `/cases/new` Practice Case context and direct Case start without pre-work inputs
 - Repository-backed Thinking Case creation and first-stage navigation
+- Unsupported version, invalid stored data, storage access, validation, and unknown Case-start error guidance
+- User-confirmed local reset path for incompatible version 1 or structurally invalid version 2 data
 - Loading, empty, route-error, validation-error, and persistence-error states
 - Task 03 unit and integration tests
+- Repository-backed Workspace Case loading and recovery states
+- Responsive three-column Workspace layout
+- Ten-stage navigation with persisted CaseStep status labels and `n/10` progress
+- Save-state display based on the Thinking Case update time
+- Non-blocking Soft Gate for forward navigation from incomplete stages
+- Local freeform/structured WritingMode selection Shell with preservation guidance
+- Collapsible Practice Case reference in Workspace instead of pre-start answer cards
+- User-first AI Coach locked and ready render states without an AI call
+- Task 04 Workspace loading, navigation, and Soft Gate tests
 
 ## Next Task
-Task 04 — Workspace Shell
+Task 05 — Step 1 Fact / Interpretation
 
 ## Last verification
-- Date: 2026-08-02
+- Date: 2026-08-03
 - `npm run lint`: passed
 - `npm run typecheck`: passed
-- `npm test`: 18 tests passed across 6 test files
+- `npm test`: 36 tests passed across 7 test files
 - `npm run build`: passed
-- Browser smoke test: `/practice` → `/cases/new` → Case creation → first-stage route passed
+- Task 04 focused test: 8 tests passed in `workspace-shell.test.tsx`
+- Local-data recovery focused test: 18 tests passed across repository and Case-start UI test files
+- Browser re-review: passed without pre-work inputs through Case creation → `/workspace/context`
+- Browser re-review: ten-stage navigation, `1 / 10` progress, WritingMode selection UI, and Soft Gate passed
+- Browser re-review: schemaVersion 1 and structurally invalid schemaVersion 2 reset recovery passed
+- Browser re-review: no Next.js error overlay appeared for recoverable stored-data errors
 
 ## Open questions
 - 심각도, 확신도, 접근 가능성, 공개 범위 값의 상세 enum은 각 기능 Task에서 어떤 기준으로 확정할지
-- schemaVersion 2가 필요해질 때 첫 실제 migration을 어떤 호환 정책으로 제공할지
-- Task 04에서 Case Start 전환 화면을 실제 Workspace Shell로 어떻게 교체할지
+- schemaVersion 1의 실제 migration을 후속 Task에서 어떤 매핑과 호환 정책으로 제공할지
+- Task 05에서 Step 1의 다섯 카드별 fieldKey와 contentJson 구조를 어떻게 고정할지
 
 ## Risks
 - 질문이 너무 많아 입력 피로가 생길 수 있음

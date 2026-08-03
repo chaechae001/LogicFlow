@@ -14,13 +14,18 @@ export async function listPracticeCases(): Promise<PracticeCase[]> {
   );
 }
 
+export function getPracticeCaseById(
+  practiceCaseId: string,
+): PracticeCase | null {
+  const practiceCase = practiceCaseFixtures.find(
+    (candidate) => candidate.id === practiceCaseId,
+  );
+
+  return practiceCase ? practiceCaseSchema.parse(practiceCase) : null;
+}
+
 export async function findPracticeCase(
   practiceCaseId: string,
 ): Promise<PracticeCase | null> {
-  const practiceCases = await listPracticeCases();
-
-  return (
-    practiceCases.find((practiceCase) => practiceCase.id === practiceCaseId) ??
-    null
-  );
+  return getPracticeCaseById(practiceCaseId);
 }

@@ -7,7 +7,7 @@ import {
   thinkingCaseSchema,
 } from "../../domain";
 
-export const LOCAL_STORAGE_SCHEMA_VERSION = 1 as const;
+export const LOCAL_STORAGE_SCHEMA_VERSION = 2 as const;
 export const THINKING_FLOW_STORAGE_KEY = "thinking-flow:repository";
 
 export const localStorageDataSchema = z

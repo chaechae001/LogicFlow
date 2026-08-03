@@ -1,24 +1,38 @@
 import { describe, expect, it } from "vitest";
 
 import { practiceCaseSchema } from "../schemas";
-import { THINKING_STAGES, thinkingStageSchema } from "../thinking-stage";
+import {
+  THINKING_STAGES,
+  thinkingStageSchema,
+  writingModeSchema,
+} from "../thinking-stage";
 import { oliveyoungPracticeCase } from "./oliveyoung-practice-case";
 
 describe("ThinkingStage", () => {
-  it("문서에 정의된 8단계 순서를 유지한다", () => {
+  it("확정된 10단계 순서를 유지한다", () => {
     expect(THINKING_STAGES).toEqual([
-      "fact_interpretation",
+      "context",
+      "observation",
       "problem_definition",
-      "customer_journey",
-      "hypotheses",
-      "validation",
-      "alternatives",
-      "action_plan",
+      "problem_structuring",
+      "hypothesis",
+      "evidence_validation",
+      "decision",
+      "solution_execution",
+      "result_evaluation",
       "conclusion_reflection",
     ]);
     expect(THINKING_STAGES.every((stage) => thinkingStageSchema.safeParse(stage).success)).toBe(
       true,
     );
+  });
+});
+
+describe("WritingMode", () => {
+  it("자유 작성과 구조화 입력만 허용하고 both 모드는 만들지 않는다", () => {
+    expect(writingModeSchema.parse("freeform")).toBe("freeform");
+    expect(writingModeSchema.parse("structured")).toBe("structured");
+    expect(writingModeSchema.safeParse("both").success).toBe(false);
   });
 });
 

@@ -20,9 +20,6 @@ export const createCaseInputSchema = z
     origin: thinkingCaseOriginSchema,
     title: z.string().trim().min(1),
     aiMode: aiCoachModeSchema,
-    initialImpression: z.string(),
-    initialSolutionIdea: z.string(),
-    decisionQuestion: z.string(),
   })
   .strict();
 

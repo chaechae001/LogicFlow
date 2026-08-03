@@ -1,14 +1,16 @@
 import Link from "next/link";
 
 const thinkingStages = [
-  "관찰",
-  "정의",
-  "구조화",
-  "가설",
-  "검증",
-  "비교",
-  "실행",
-  "회고",
+  "목적·맥락 이해",
+  "현상 관찰",
+  "문제 정의",
+  "문제 분해·구조화",
+  "가설 설정",
+  "근거 수집·검증",
+  "대안 비교·의사결정",
+  "해결안 설계·실행",
+  "결과 평가",
+  "결론 전달·회고",
 ] as const;
 
 export default function Home() {
@@ -49,11 +51,11 @@ export default function Home() {
           </div>
 
           <aside
-            aria-label="Thinking Flow의 8단계 사고 흐름"
+            aria-label="Thinking Flow의 10단계 사고 흐름"
             className="relative border-l border-[var(--line-strong)] pl-8 sm:pl-10"
           >
             <p className="mb-7 text-xs font-bold tracking-[0.16em] text-[var(--muted)] uppercase">
-              8-stage practice
+              10-stage practice
             </p>
             <ol className="space-y-4">
               {thinkingStages.map((stage, index) => (

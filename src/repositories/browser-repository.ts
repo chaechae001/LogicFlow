@@ -1,6 +1,5 @@
 import { LocalStorageRepository } from "./local-storage/local-storage-repository";
-import type { ThinkingCaseRepository } from "./thinking-case-repository";
 
-export function createBrowserThinkingCaseRepository(): ThinkingCaseRepository {
+export function createBrowserThinkingCaseRepository(): LocalStorageRepository {
   return new LocalStorageRepository();
 }

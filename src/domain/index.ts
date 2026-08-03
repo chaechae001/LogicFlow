@@ -5,6 +5,9 @@ export {
 export * from "./schemas";
 export {
   THINKING_STAGES,
+  WRITING_MODES,
   thinkingStageSchema,
+  writingModeSchema,
   type ThinkingStage,
+  type WritingMode,
 } from "./thinking-stage";

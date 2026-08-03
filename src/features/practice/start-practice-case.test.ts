@@ -24,23 +24,14 @@ class MemoryStorage implements StorageLike {
   }
 }
 
-const values = {
-  initialImpression: "  상품을 다시 찾는 과정부터 확인해야 한다.  ",
-  initialSolutionIdea: "  체험 상품을 직접 저장하는 방법이 떠올랐다.  ",
-  decisionQuestion: "  어떤 연결 지점을 먼저 검증해야 하는가?  ",
-};
-
 describe("startPracticeCase", () => {
-  it("최초 입력을 기존 CreateCaseInput 계약으로 변환한다", () => {
-    expect(buildCreateCaseInput(oliveyoungPracticeCase, values)).toEqual({
+  it("사전 작성값 없이 CreateCaseInput 계약으로 변환한다", () => {
+    expect(buildCreateCaseInput(oliveyoungPracticeCase)).toEqual({
       userId: LOCAL_USER_ID,
       practiceCaseId: oliveyoungPracticeCase.id,
       origin: "practice_library",
       title: oliveyoungPracticeCase.title,
       aiMode: "guide",
-      initialImpression: "상품을 다시 찾는 과정부터 확인해야 한다.",
-      initialSolutionIdea: "체험 상품을 직접 저장하는 방법이 떠올랐다.",
-      decisionQuestion: "어떤 연결 지점을 먼저 검증해야 하는가?",
     });
   });
 
@@ -58,18 +49,16 @@ describe("startPracticeCase", () => {
     const result = await startPracticeCase(
       repository,
       oliveyoungPracticeCase,
-      values,
     );
     const storedCase = await repository.getCase(result.thinkingCase.id);
 
     expect(result.destination).toBe(
-      `/cases/${result.thinkingCase.id}/workspace/fact_interpretation`,
+      `/cases/${result.thinkingCase.id}/workspace/context`,
     );
     expect(storedCase?.thinkingCase).toMatchObject({
       practiceCaseId: oliveyoungPracticeCase.id,
-      initialImpression: "상품을 다시 찾는 과정부터 확인해야 한다.",
-      initialSolutionIdea: "체험 상품을 직접 저장하는 방법이 떠올랐다.",
-      decisionQuestion: "어떤 연결 지점을 먼저 검증해야 하는가?",
+      currentStage: "context",
     });
+    expect(storedCase?.steps).toHaveLength(10);
   });
 });

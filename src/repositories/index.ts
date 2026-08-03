@@ -1,6 +1,8 @@
 export {
   LocalStorageRepository,
   LocalStorageRepositoryError,
+  InvalidStoredDataError,
+  StorageAccessError,
   ThinkingCaseNotFoundError,
   UnsupportedStorageVersionError,
   type LocalStorageRepositoryDependencies,
