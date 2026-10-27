@@ -1,3 +1,5 @@
+> 현재 기준(2026-10-27): V2 context 초안 저장 구현입니다. `docs/HANDOFF.md`, `docs/PROJECT_STATUS.md`, `docs/VERIFICATION.md`를 먼저 읽고 `docs/v2/10_V2_DEVELOPMENT_ROADMAP.md`의 V2-03 검수를 이어갑니다. 아래 제품 원칙은 유지하되 V1 Task 순서만으로 현재 상태를 판단하지 않습니다.
+
 # AGENTS.md — Thinking Flow 개발 규칙
 
 ## 1. 제품 철학

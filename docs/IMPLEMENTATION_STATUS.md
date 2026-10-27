@@ -1,7 +1,7 @@
 # Implementation Status
 
 ## Current phase
-Task 04 complete — ten-stage Workspace revision and browser re-review passed.
+V2 context draft workflow implemented; current source baseline and next task: [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 ## Completed
 - Product Core
@@ -44,7 +44,7 @@ Task 04 complete — ten-stage Workspace revision and browser re-review passed.
 - Task 04 Workspace loading, navigation, and Soft Gate tests
 
 ## Next Task
-Task 05 — Step 1 Fact / Interpretation
+V2-03 — Context 저장·복원 브라우저 검수. V1 Task 05 안내는 이전 기준입니다.
 
 ## Last verification
 - Date: 2026-08-03

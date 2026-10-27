@@ -1,0 +1,1299 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>작업 화면 — LogicFlow</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+  .appbar{position:sticky;top:0;z-index:60;background:var(--surface);border-bottom:1px solid var(--rule)}
+  .appbar-in{height:62px;display:flex;align-items:center;gap:16px;padding:0 22px}
+  .casechip{display:flex;align-items:center;gap:10px;min-width:0}
+  .casechip .title{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:28ch}
+  .prog{display:flex;align-items:center;gap:12px;margin-left:auto}
+  .saved{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--fact)}
+  @media(max-width:1000px){.casechip .title{display:none}}
+
+  .app{display:grid;grid-template-columns:var(--cw-l,248px) minmax(0,1fr) var(--cw-r,338px);align-items:start;min-height:calc(100vh - 110px)}
+  .app.hide-l{--cw-l:0px} .app.hide-r{--cw-r:0px}
+  .zone-l,.zone-r{position:sticky;top:110px;max-height:calc(100vh - 110px);overflow-y:auto;overflow-x:hidden}
+  .zone-l{border-right:1px solid var(--rule);padding:20px 14px;background:var(--surface-2)}
+  .zone-c{padding:0 48px 40px;min-width:0}
+  .zone-r{border-left:1px solid var(--rule);background:var(--surface);display:flex;flex-direction:column;padding:0}
+  .app.hide-l .zone-l,.app.hide-r .zone-r{overflow:hidden}
+  @media(max-width:1280px){.app{grid-template-columns:var(--cw-l,226px) minmax(0,1fr)}.zone-r{display:none}.zone-c{padding:0 36px 80px}}
+  @media(max-width:880px){.app{grid-template-columns:1fr}.zone-l{display:none}.zone-c{padding:0 20px 72px}}
+
+  .tmplchip{display:none}  /* (요청14) 템플릿 블록 숨김 — 사고 흐름에 집중 */
+  .tmplchip .t{font-size:14px;font-weight:600;margin-top:5px;display:flex;gap:7px;align-items:center}
+  .tmplchip a{font-size:12.5px;color:var(--deep);text-decoration:none}
+  .rail .famdot{width:3px;height:16px;border-radius:2px;flex:none;background:var(--rule-strong)}
+  .rail .f-def .famdot{background:var(--fam-def)} .rail .f-str .famdot{background:var(--fam-str)}
+  .rail .f-val .famdot{background:var(--fam-val)} .rail .f-exp .famdot{background:var(--fam-exp)}
+
+  .stephead{position:sticky;top:110px;z-index:6;display:flex;align-items:center;gap:13px;
+            padding:13px 0 11px;border-bottom:1px solid var(--rule);margin-bottom:22px;
+            background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(8px)}
+  .stephead > div:not(.stepicon){min-width:0;flex:1}
+  .stepicon{width:40px;height:40px;min-width:40px;aspect-ratio:1;border-radius:11px;background:var(--surface);border:1px solid var(--rule);
+            display:grid;place-items:center;font-size:20px;flex:0 0 40px;box-shadow:var(--shadow)}
+  .stephead .cat{font-size:11px}
+  .stephead h1{font-size:20px;margin-top:2px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stephead .purpose{color:var(--muted);font-size:13px;margin-top:2px;line-height:1.5;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .modes{display:inline-flex;background:var(--surface-2);border:1px solid var(--rule);border-radius:999px;padding:4px;gap:4px}
+  .modes button{border:0;background:transparent;padding:7px 16px;border-radius:999px;font-size:13.5px;cursor:pointer;color:var(--muted)}
+  .modes button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
+
+  .qcard{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow)}
+  .qcard > header{padding:18px 26px 16px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:14px}
+  .qdots{display:flex;gap:5px;margin-left:auto}
+  .qdots i{width:20px;height:3px;border-radius:2px;background:var(--rule);display:block}
+  .qdots i.on{background:var(--deep)} .qdots i.cur{background:var(--attn)}
+  .qbody{padding:28px 26px}
+  .qtext{font-size:21px;font-weight:700;letter-spacing:-.025em;line-height:1.5}
+  .qhelp{color:var(--muted);font-size:14px;margin-top:10px;line-height:1.8}
+  .qfoot{display:flex;align-items:center;gap:12px;padding:16px 26px;border-top:1px solid var(--rule);
+         background:var(--surface-2);flex-wrap:wrap}
+
+  /* 편집 가능한 본문 — 하이라이트해서 확장 질문 팝업을 띄우는 무대 */
+  .editor{background:var(--surface);border:1px solid var(--rule-strong);border-radius:var(--r);
+          padding:20px 22px;min-height:120px;font-size:16.5px;line-height:2.05;outline:0}
+  .editor:focus{border-color:var(--deep);box-shadow:0 0 0 3px var(--deep-wash)}
+  .editor p + p{margin-top:14px}
+  .editor:empty::before{content:attr(data-ph);color:var(--faint)}
+  .edhint{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted)}
+  .edhint kbd{border:1px solid var(--rule-strong);border-radius:5px;padding:1px 7px;font-size:11.5px;
+              font-family:var(--mono);background:var(--surface-2)}
+
+  .addnode{border:1px dashed var(--rule-strong);background:transparent;border-radius:var(--r-sm);padding:6px 13px;
+           font-size:13px;color:var(--muted);cursor:pointer}
+  .addnode:hover{border-color:var(--deep);color:var(--deep)}
+  .node input{border:0;background:transparent;outline:0;font-size:14px;min-width:150px;font-family:inherit}
+  .node .del{border:0;background:transparent;color:var(--faint);cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
+  .node .del:hover{color:var(--danger)}
+  .frow{display:grid;grid-template-columns:124px 1fr;gap:12px;align-items:center;margin-bottom:11px}
+  .frow > label{font-size:12.5px;color:var(--muted);font-weight:600}
+  @media(max-width:620px){.frow{grid-template-columns:1fr;gap:6px}}
+
+  .stepview{display:none} .stepview[data-on]{display:block}
+
+  .rtabs{display:flex;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--surface);z-index:5}
+  .rtabs button{flex:1;border:0;background:transparent;padding:15px 6px;font-size:13px;color:var(--muted);cursor:pointer;
+    border-bottom:2px solid transparent;display:flex;align-items:center;justify-content:center;gap:6px}
+  .rtabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--deep)}
+  .rpane{display:none;padding:22px} .rpane[data-on]{display:block}
+  .exblock{display:none} .exblock[data-on]{display:block}
+  .ex{border:1px solid var(--rule);border-radius:var(--r);padding:15px 17px;background:var(--surface-2);margin-top:12px}
+  .ex .exhead{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .ex p{font-size:13.5px;line-height:1.8;color:var(--ink-2)}
+  .ex .why{margin-top:10px;padding-top:10px;border-top:1px dashed var(--rule);color:var(--muted);font-size:12.5px}
+  .ex .node{background:transparent;font-size:13px;padding:4px 9px}
+
+  .coachbtns{display:grid;gap:9px;margin-bottom:20px}
+  .coachbtn{text-align:left;border:1px solid var(--rule);background:var(--surface);border-radius:var(--r);
+            padding:13px 15px;cursor:pointer;display:flex;gap:11px;align-items:flex-start}
+  .coachbtn:hover{border-color:var(--deep);background:var(--deep-wash)}
+  .coachbtn b{display:block;font-size:14px} .coachbtn span{font-size:12.5px;color:var(--muted);line-height:1.6}
+  .coachmsg{border:1px solid var(--attn);border-left-width:3px;border-radius:var(--r);padding:15px 16px;
+            font-size:13.5px;line-height:1.85;background:var(--attn-bg)}
+  .pullitem{border:1px solid var(--rule);border-radius:var(--r);padding:13px 15px;margin-top:10px;background:var(--surface)}
+  .pullitem p{font-size:13.5px;line-height:1.7;margin-top:7px}
+
+  .mstep{display:none}
+  @media(max-width:880px){
+    .mstep{display:flex;gap:8px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--rule);
+           background:var(--surface);overflow-x:auto}
+    .mstep button{flex:none;border:1px solid var(--rule);background:var(--surface);border-radius:999px;
+                  padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+    .mstep button[aria-current]{background:var(--deep);border-color:var(--deep);color:var(--on-deep);font-weight:600}
+  }
+
+  /* 좌측 라벨 — 더 굵고 진하게 */
+  .zone-l .label{font-weight:700;color:var(--ink-2);font-size:12px;letter-spacing:.05em}
+
+  /* (요청15) 사고 흐름 10단계 — 블럭으로 구분 + 계열 색 막대 */
+  .rail .famdot{display:none}
+  .rail li{padding-left:0}
+  .rail li::before{display:none}
+  .rail .dot{display:none}
+  .rail button{border:1px solid var(--rule);background:var(--surface);border-radius:var(--r-sm);
+     margin-bottom:6px;padding:9px 11px;font-weight:600;color:var(--ink-2);
+     border-left:3px solid var(--rule-strong);gap:8px}
+  .rail .f-def button{border-left-color:var(--fam-def)} .rail .f-str button{border-left-color:var(--fam-str)}
+  .rail .f-val button{border-left-color:var(--fam-val)} .rail .f-exp button{border-left-color:var(--fam-exp)}
+  .rail .done button{color:var(--muted);background:var(--surface-2)}
+  .rail .now button{color:var(--ink);border-color:var(--deep);box-shadow:0 0 0 2px var(--deep-wash)}
+  .rail .n{color:var(--faint)}
+
+  /* (요청10) 상단 2줄 — 공통 네비 + 케이스바 */
+  .topnav{height:54px;display:flex;align-items:center;gap:20px;padding:0 22px;border-bottom:1px solid var(--rule)}
+  .appbar-in{height:56px}
+
+  /* (요청2) 나무 진행바 — 단계를 지날수록 잎이 자란다 */
+  .growbar{display:inline-flex;align-items:center;gap:4px;position:relative;padding:6px 3px}
+  .growbar::before{content:"";position:absolute;left:3px;right:3px;top:50%;transform:translateY(-50%);
+     height:2px;background:var(--rule-strong);border-radius:2px}
+  .growbar i{position:relative;width:11px;height:11px;border-radius:0 60% 60% 60%;transform:rotate(45deg);
+     background:var(--surface);border:1.5px solid var(--rule-strong);transition:background .2s,border-color .2s}
+  .growbar i.on{background:var(--fam-def);border-color:var(--fam-def)}
+  .growbar i.cur{border-color:var(--deep);background:var(--deep-wash)}
+
+  /* (요청7) zone 접기/펴기 — 우측 상단 작은 +/- 버튼 */
+  .ztgl{border:1px solid var(--rule-strong);background:var(--surface);border-radius:6px;width:24px;height:24px;
+     font-size:15px;line-height:1;cursor:pointer;color:var(--muted);flex:none;display:grid;place-items:center}
+  .ztgl:hover{border-color:var(--deep);color:var(--deep)}
+  .ltop{display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--surface-2);padding:0 2px 10px;z-index:4}
+  .ltop .label{flex:1}
+  .rtabs .ztgl{align-self:center;margin:0 8px}
+  .app.hide-l{--cw-l:40px} .app.hide-r{--cw-r:40px}
+  .app.hide-l .zone-l{padding:14px 7px}
+  .app.hide-l .zone-l > :not(.ltop){display:none}
+  .app.hide-l .ltop{justify-content:center;padding-bottom:0} .app.hide-l .ltop .label{display:none}
+  .app.hide-r .zone-r > :not(.rtabs){display:none}
+  .app.hide-r .rtabs > :not(.ztgl){display:none}
+  .app.hide-r .rtabs{justify-content:center}
+
+  /* (요청6) 구분선 드래그로 확장/축소 */
+  .rzhandle{position:absolute;top:0;bottom:0;width:9px;cursor:col-resize;z-index:30}
+  .rzhandle::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:transparent;transform:translateX(-50%)}
+  .rzhandle:hover::after{background:var(--deep)}
+  .zone-l .rzhandle{right:-4px} .zone-r .rzhandle{left:-4px}
+  .app.hide-l .zone-l .rzhandle,.app.hide-r .zone-r .rzhandle{display:none}
+
+  /* (9) 패널 접기/펴기 토글 */
+  .paneltgl{display:inline-flex;gap:5px;margin-left:2px}
+  .paneltgl button{border:1px solid var(--rule-strong);background:var(--surface);border-radius:var(--r-sm);
+     width:30px;height:30px;display:grid;place-items:center;cursor:pointer;font-size:14px;color:var(--muted);line-height:1}
+  .paneltgl button[aria-pressed="false"]{background:var(--surface-2);color:var(--faint)}
+  .paneltgl button[aria-pressed="true"]{border-color:var(--deep);color:var(--deep);background:var(--deep-wash)}
+  .paneltgl button:hover{border-color:var(--deep)}
+
+  /* (8) 도식 연습장 */
+  #p-draw{padding:0!important;display:none;flex-direction:column;height:calc(100vh - 110px - 49px)}
+  #p-draw[data-on]{display:flex}
+  .draw-tools{display:flex;gap:5px;padding:10px 12px;border-bottom:1px solid var(--rule);flex-wrap:wrap;background:var(--surface)}
+  .draw-tools button{border:1px solid var(--rule-strong);background:var(--surface);border-radius:var(--r-sm);
+     padding:6px 9px;font-size:12px;cursor:pointer;color:var(--ink-2);display:inline-flex;gap:5px;align-items:center;line-height:1}
+  .draw-tools button.on{border-color:var(--deep);color:var(--deep);background:var(--deep-wash);font-weight:600}
+  .draw-tools .sep{width:1px;background:var(--rule);margin:2px 3px}
+  .draw-canvas{position:relative;flex:1;min-height:300px;overflow:hidden;cursor:crosshair;
+     background-image:radial-gradient(var(--rule-strong) 1px,transparent 1px);background-size:18px 18px;background-color:var(--surface)}
+  .draw-svg{position:absolute;inset:0;pointer-events:none;z-index:1;color:var(--rule-strong)}
+  .dnode{position:absolute;z-index:2;background:var(--surface);border:1.5px solid var(--deep);border-radius:var(--r-sm);
+     padding:7px 12px;font-size:12.5px;color:var(--ink);cursor:move;box-shadow:var(--shadow);min-width:46px;text-align:center;
+     user-select:none;white-space:nowrap}
+  .dnode.dia{border-color:var(--attn)}
+  .dnode.txt{border-style:dashed;border-color:var(--rule-strong);box-shadow:none;background:transparent}
+  .dnode.sel{outline:2px solid var(--deep);outline-offset:2px}
+  .dnode:focus{outline:2px solid var(--deep);outline-offset:2px}
+  .draw-hint{padding:9px 13px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--rule);background:var(--surface-2);line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="appbar">
+  <div class="topnav">
+    <a class="mark" href="index.html"><span class="lf"></span>LogicFlow</a>
+    <nav class="nav">
+      <a href="landing.html">소개</a>
+      <a href="start.html">훈련 시작</a>
+      <a href="workspace.html" aria-current="page">작업 화면</a>
+      <a href="library.html">저장소</a>
+      <a href="portfolio.html">포트폴리오</a>
+      <a href="community.html">커뮤니티</a>
+    </nav>
+    <button class="thm" id="thm" aria-label="다크 모드 전환" style="margin-left:14px">🌙</button>
+  </div>
+  <div class="appbar-in">
+    <div class="casechip">
+      <span class="cat c-saas"><span class="emo">🧩</span> B2B SaaS</span>
+      <span class="lv" style="color:var(--lv3)">🌲 심화 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+      <span class="title">도입 후 30일 안에 핵심 기능을 안 쓴 계정이 절반</span>
+    </div>
+    <div class="prog">
+      <span class="saved"><span class="emo">💾</span> 1분 전 저장됨</span>
+      <span class="growbar" id="growbar" title="4 / 10 단계 완료"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <span class="mono" style="color:var(--muted)"><b id="pgN">4</b> / 10</span>
+      <a class="btn btn-ghost btn-sm" href="portfolio.html">전체 도식</a>
+      <button class="btn btn-sm">단계 완료</button>
+    </div>
+  </div>
+</div>
+
+<div class="mstep" id="mstep"></div>
+
+<div class="app">
+
+  <!-- ============ LEFT ============ -->
+  <aside class="zone-l">
+    <div class="rzhandle" id="rzL"></div>
+    <div class="tmplchip">
+      <span class="label">템플릿</span>
+      <div class="t"><span class="emo">🗓️</span> 월간 포트폴리오</div>
+      <a href="start.html">단계 바꾸기 →</a>
+    </div>
+
+    <div class="ltop"><span class="label">사고 흐름 · 10단계</span><button class="ztgl" id="tglL" title="사고 흐름 패널 접기">−</button></div>
+    <ul class="rail" id="rail" style="margin-top:4px">
+      <li class="done f-def"><span class="dot"></span><button data-step="s1"><span class="famdot"></span><span class="n">01</span><span class="emo">🎯</span> 목적·맥락</button></li>
+      <li class="done f-def"><span class="dot"></span><button data-step="s2"><span class="famdot"></span><span class="n">02</span><span class="emo">👀</span> 현상 관찰</button></li>
+      <li class="done f-def"><span class="dot"></span><button data-step="s3"><span class="famdot"></span><span class="n">03</span><span class="emo">📌</span> 문제 정의</button></li>
+      <li class="now f-str"><span class="dot"></span><button data-step="s4" aria-current="step"><span class="famdot"></span><span class="n">04</span><span class="emo">🌳</span> 문제 분해</button></li>
+      <li class="f-val"><span class="dot"></span><button data-step="s5"><span class="famdot"></span><span class="n">05</span><span class="emo">💡</span> 가설 설정</button></li>
+      <li class="f-val"><span class="dot"></span><button data-step="s6"><span class="famdot"></span><span class="n">06</span><span class="emo">🔍</span> 근거·검증</button></li>
+      <li class="f-val"><span class="dot"></span><button data-step="s7"><span class="famdot"></span><span class="n">07</span><span class="emo">⚖️</span> 대안·결정</button></li>
+      <li class="f-exp"><span class="dot"></span><button data-step="s8"><span class="famdot"></span><span class="n">08</span><span class="emo">🛠️</span> 해결안 설계</button></li>
+      <li class="f-exp"><span class="dot"></span><button data-step="s9"><span class="famdot"></span><span class="n">09</span><span class="emo">📊</span> 결과 평가</button></li>
+      <li class="f-exp"><span class="dot"></span><button data-step="s10"><span class="famdot"></span><span class="n">10</span><span class="emo">🪞</span> 결론·회고</button></li>
+    </ul>
+
+    <div style="margin-top:22px;padding:14px 15px;border:1px solid var(--rule);border-radius:var(--r);background:var(--surface)">
+      <span class="label">훈련 계열</span>
+      <div style="display:grid;gap:7px;margin-top:11px">
+        <span class="cat c-def"><span class="emo">🎯</span> 정의 · 01–03</span>
+        <span class="cat c-str"><span class="emo">🌳</span> 구조 · 04</span>
+        <span class="cat c-val"><span class="emo">🔍</span> 검증 · 05–07</span>
+        <span class="cat c-exp"><span class="emo">✍️</span> 표현 · 08–10</span>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding:14px 15px;border:1px solid var(--rule);border-radius:var(--r);background:var(--surface)">
+      <span class="label">쌓인 것</span>
+      <p class="small" style="margin-top:10px;line-height:2.1">
+        <span class="emo">🟢</span> 사실 <b style="color:var(--fact)">6</b> · <span class="emo">🟡</span> 해석 <b style="color:var(--interp)">3</b><br>
+        <span class="emo">🟣</span> 가설 <b style="color:var(--hypo)">4</b> · <span class="emo">🔵</span> 근거 <b style="color:var(--evid)">7</b><br>
+        <span class="emo">✨</span> 붙인 생각 <b>12</b>개
+      </p>
+    </div>
+  </aside>
+
+  <!-- ============ CENTER ============ -->
+  <main class="zone-c">
+
+    <!-- ─────── 01 목적·맥락 ─────── -->
+    <section class="stepview" id="s1">
+      <div class="stephead">
+        <div class="stepicon">🎯</div>
+        <div>
+          <span class="cat c-def">정의 계열 · 01</span>
+          <h1>왜 지금, 누구를 위해 이 문제인가</h1>
+          <p class="purpose">해결 전에 목표와 제약부터 고정합니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+        <span class="tiny">방식을 바꿔도 쓴 내용은 남습니다</span>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">질문 5 / 6</span><span class="qdots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span></header>
+        <div class="qbody">
+          <p class="qtext">지금 주어진 제약은 무엇인가요?</p>
+          <p class="qhelp">예산, 기간, 조직, 데이터 접근권처럼 바꿀 수 없는 조건을 적습니다. 제약이 명확할수록 대안이 현실적이 됩니다.</p>
+          <div class="editor" contenteditable="true" data-step="s1" style="margin-top:20px">개발 리소스는 2주치만 확보돼 있고, 가격 정책은 이번 분기에 건드릴 수 없다. 사용자 인터뷰는 가능하지만 계정당 한 번뿐이다.</div>
+          <div class="edhint"><span class="emo">✨</span> 문장을 드래그하면 생각 확장 질문이 뜹니다</div>
+        </div>
+        <div class="qfoot">
+          <button class="btn btn-ghost btn-sm">← 이전</button><button class="btn btn-sm">다음 질문 →</button>
+          <span class="tiny" style="margin-left:auto">남은 질문 1개 · 이해관계자</span>
+        </div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">🗂️ 맥락 카드</span><span class="tiny" style="margin-left:auto">답할 때마다 채워집니다</span></header>
+        <div class="body">
+          <dl class="ctxcard">
+            <dt><span class="emo">📝</span> 주제</dt><dd>도입 3개월 차 계정의 갱신율</dd>
+            <dt><span class="emo">🎯</span> 목표</dt><dd>갱신 판단 시점(90일) 전에 팀 단위 사용을 만든다</dd>
+            <dt><span class="emo">📈</span> 핵심 지표</dt><dd>30일 내 2인 이상 활성 계정 비율</dd>
+            <dt><span class="emo">👥</span> 이해관계자</dt><dd class="empty">아직 안 적음</dd>
+            <dt><span class="emo">🔒</span> 제약</dt><dd>개발 2주 · 가격 정책 고정 · 인터뷰 계정당 1회</dd>
+            <dt><span class="emo">⏰</span> 지금인 이유</dt><dd>1분기 갱신 시즌까지 6주 남음</dd>
+          </dl>
+          <div class="checkrow">
+            <span class="check ok">✓ 목표와 지표가 연결됨</span>
+            <span class="check ok">✓ 제약이 구체적</span>
+            <span class="check">이해관계자 미입력</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px"><button class="btn">이 단계 완료하고 02로 →</button><button class="btn btn-ghost">나중에 이어서</button></div>
+    </section>
+
+    <!-- ─────── 02 현상 관찰 · 생각 인터랙션 무대 ─────── -->
+    <section class="stepview" id="s2">
+      <div class="stephead">
+        <div class="stepicon">👀</div>
+        <div>
+          <span class="cat c-def">정의 계열 · 02</span>
+          <h1>사실과 해석을 갈라놓습니다</h1>
+          <p class="purpose">직접 본 것과 그렇게 보이는 것을 갈라놓습니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+        <span class="tiny">쓴 뒤에 문장별로 나누면 됩니다</span>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">자유 작성</span><span class="tag t-plain" style="margin-left:auto"><span class="emo">✨</span> 생각 인터랙션 켜짐</span></header>
+        <div class="qbody">
+          <p class="qtext">지금 무슨 일이 벌어지고 있나요?</p>
+          <p class="qhelp">떠오르는 대로 먼저 쓰세요. 다 쓰고 나서 문장을 드래그하면 그 문장에 맞는 확장 질문이 뜹니다.</p>
+
+          <div class="editor" contenteditable="true" data-step="s2" style="margin-top:20px">도입한 지 30일이 지났는데 핵심 기능을 한 번도 안 쓴 계정이 48%나 된다. <span class="hl" data-kind="fact">온보딩 이메일 열람률은 62%로 낮지 않다<span class="pin">2</span></span>. 그래서 제품을 몰라서 안 쓰는 건 아닌 것 같다. 인터뷰를 해보니 담당자들은 대체로 제품을 이해하고 있었고, 팀에 공유할 자료를 직접 만들어야 한다는 말이 반복해서 나왔다.</div>
+          <div class="edhint"><span class="emo">🖱️</span> 아무 문장이나 드래그해 보세요 <kbd>드래그</kbd> → 확장 질문 팝업</div>
+
+          <div class="thread" id="thread-s2">
+            <div class="thought">
+              <div class="qz"><span class="emo">🔢</span> 이 숫자는 무엇과 비교한 값인가요?</div>
+              <div class="az">업계 평균이나 우리 다른 제품과 비교한 적은 없다. 62%가 높은 건지 낮은 건지 사실 모른다.</div>
+              <div class="meta"><span class="tag t-unknown">미확인으로 이동</span><span class="tiny">온보딩 이메일 열람률 62% 에 붙임</span></div>
+            </div>
+            <div class="thought">
+              <div class="qz"><span class="emo">🧐</span> 이건 사실인가요, 해석인가요?</div>
+              <div class="az">해석이다. 열람률이 높다고 이해했다는 뜻은 아니다. 열었다는 것과 이해했다는 것은 다른 이야기다.</div>
+              <div class="meta"><span class="tag t-interp">해석으로 표시</span><span class="tiny">“제품을 몰라서 안 쓰는 건 아닌 것 같다” 에 붙임</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="qfoot">
+          <button class="btn btn-sm">문장별로 보드에 나누기 →</button>
+          <span class="tiny" style="margin-left:auto">붙인 생각 2개 · 태그 3개</span>
+        </div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">🗃️ 사실 · 해석 · 미확인 보드</span><span class="tiny" style="margin-left:auto">칸을 끌어 옮길 수 있습니다</span></header>
+        <div class="body">
+          <div class="board">
+            <div class="col f">
+              <div class="hd" style="color:var(--fact)"><span class="emo">🟢</span> 직접 본 사실 · 6</div>
+              <div class="it">30일 내 핵심 기능 미사용 계정 48%</div>
+              <div class="it">온보딩 이메일 열람률 62%</div>
+              <div class="it">초대 시도 후 가입 완료 41%</div>
+              <div class="it">인터뷰 6건 중 5건이 “설명 자료가 없다”</div>
+            </div>
+            <div class="col i">
+              <div class="hd" style="color:var(--interp)"><span class="emo">🟡</span> 내 해석 · 3</div>
+              <div class="it">제품을 몰라서가 아니라 전파를 못 하는 것으로 보인다</div>
+              <div class="it">온보딩 자체는 실패하지 않은 듯</div>
+            </div>
+            <div class="col u">
+              <div class="hd" style="color:var(--unknown)"><span class="emo">⚪</span> 아직 모름 · 4</div>
+              <div class="it">62%가 높은 값인지 비교 대상 없음</div>
+              <div class="it">관리자 권한 설정에서 막히는지</div>
+            </div>
+          </div>
+          <div class="checkrow">
+            <span class="check ok">✓ 사실 4개 이상</span>
+            <span class="check ok">✓ 사실과 해석이 분리됨</span>
+            <span class="check warn">! “온보딩 자체는 실패하지 않은 듯”에 근거가 없습니다</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px"><button class="btn">이 단계 완료하고 03으로 →</button></div>
+    </section>
+
+    <!-- ─────── 03 문제 정의 ─────── -->
+    <section class="stepview" id="s3">
+      <div class="stephead">
+        <div class="stepicon">📌</div>
+        <div>
+          <span class="cat c-def">정의 계열 · 03</span>
+          <h1>한 문장으로 압축합니다</h1>
+          <p class="purpose">관찰과 원인을 섞지 않고 한 문장으로 압축합니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">질문 4 / 5</span><span class="qdots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span></header>
+        <div class="qbody">
+          <p class="qtext">무엇이 그 행동을 막고 있나요?</p>
+          <p class="qhelp">여기에 해결책을 넣지 않습니다. “~기능이 없어서”가 아니라 “~를 할 수 없어서”로 적습니다.</p>
+          <div class="field" style="margin-top:20px">
+            <div class="scaffold">
+              <span class="slot filled">도입 담당자</span>가
+              <span class="slot filled">첫 주 팀에 공유하려는 시점</span>에
+              <span class="slot filled">팀원에게 제품을 설명</span>하려 하지만
+              <input class="slot" value="설명할 자료를 직접 만들어야 해서" aria-label="장애 요인">
+              <span class="slot filled">혼자 쓰다가 멈춘다</span>.
+            </div>
+          </div>
+        </div>
+        <div class="qfoot"><button class="btn btn-ghost btn-sm">← 이전</button><button class="btn btn-sm">다음 질문 →</button><span class="tiny" style="margin-left:auto">남은 질문 1개 · 이 문제의 영향</span></div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">📌 완성된 문제 정의</span><span class="tiny" style="margin-left:auto">품질 기준 6개로 점검합니다</span></header>
+        <div class="body">
+          <div class="card" style="font-size:17px;line-height:2;border-left:3px solid var(--deep)">
+            도입 담당자가 첫 주 팀에 공유하려는 시점에 팀원에게 제품을 설명하려 하지만,
+            설명할 자료를 직접 만들어야 해서 혼자 쓰다가 멈춘다.
+          </div>
+          <div class="qual">
+            <div><span class="emo">✅</span> 대상이 구체적이다 — “도입 담당자”</div>
+            <div><span class="emo">✅</span> 상황이 그려진다 — “첫 주 팀에 공유하려는 시점”</div>
+            <div><span class="emo">✅</span> 관찰된 현상과 추정 원인이 분리되어 있다</div>
+            <div><span class="emo">✅</span> 특정 솔루션을 전제하지 않는다</div>
+            <div><span class="emo">✅</span> 한 문장으로 압축된다</div>
+            <div><span class="emo">⚠️</span> 문제가 만드는 영향이 아직 없다 — 마지막 질문에서 채웁니다</div>
+          </div>
+          <div class="checkrow">
+            <span class="check ok">✓ 5칸 중 5칸 채움</span><span class="check ok">✓ 해결책 어휘 없음</span><span class="check warn">! 영향 미입력</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px"><button class="btn">이 단계 완료하고 04로 →</button></div>
+    </section>
+
+    <!-- ─────── 04 문제 분해 ─────── -->
+    <section class="stepview" id="s4" data-on>
+      <div class="stephead">
+        <div class="stepicon">🌳</div>
+        <div>
+          <span class="cat c-str">구조 계열 · 04</span>
+          <h1>겹치지 않게, 빠짐없이 나눕니다</h1>
+          <p class="purpose">한 줄 문제를 겹치지 않게 3~5개로 나눕니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">질문 2 / 4</span><span class="qdots"><i class="on"></i><i class="cur"></i><i></i><i></i></span></header>
+        <div class="qbody">
+          <p class="qtext">이 문제를 어떤 기준으로 나누겠습니까?</p>
+          <p class="qhelp">기준을 먼저 고르면 가지가 겹치지 않습니다. 하나만 고르세요.</p>
+          <div class="chips" style="margin-top:20px">
+            <button class="chip">🔄 프로세스 단계</button>
+            <button class="chip" aria-pressed="true">👥 사용자 유형</button>
+            <button class="chip">🧩 문제 원인</button>
+            <button class="chip">📉 비즈니스 퍼널</button>
+            <button class="chip">📊 성과 지표</button>
+            <button class="chip">✏️ 직접 정의</button>
+          </div>
+
+          <div style="margin-top:28px">
+            <span class="label">가지를 3~5개 적어보세요</span>
+            <ul class="tree" style="margin-top:12px">
+              <li>
+                <span class="node node-root">팀 확산이 멈추는 지점</span>
+                <ul>
+                  <li><span class="node"><input value="도입 담당자" aria-label="가지 1"><button class="del" aria-label="삭제">×</button></span>
+                    <ul>
+                      <li><span class="node"><input value="전파 자료 부재" aria-label="하위"><button class="del" aria-label="삭제">×</button></span></li>
+                      <li><span class="node"><input value="설명할 시간 부족" aria-label="하위"><button class="del" aria-label="삭제">×</button></span></li>
+                      <li><button class="addnode">＋ 하위 항목</button></li>
+                    </ul>
+                  </li>
+                  <li><span class="node"><input value="팀원" aria-label="가지 2"><button class="del" aria-label="삭제">×</button></span></li>
+                  <li><span class="node"><input value="관리자" aria-label="가지 3"><button class="del" aria-label="삭제">×</button></span></li>
+                  <li><span class="node node-gap"><input value="제품 자체" aria-label="가지 4"><span class="tag t-gap">⚠️ 기준 벗어남</span><button class="del" aria-label="삭제">×</button></span></li>
+                  <li><button class="addnode">＋ 가지 추가</button></li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="qfoot"><button class="btn btn-ghost btn-sm">← 이전</button><button class="btn btn-sm">다음 질문 →</button><span class="tiny" style="margin-left:auto">남은 질문 2개 · 측정 지표, 누락 점검</span></div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">🌳 로직 트리 + MECE 점검</span><span class="tiny" style="margin-left:auto">가지마다 지표를 붙이면 실험 순서가 보입니다</span></header>
+        <div class="body">
+          <div class="scrollx">
+            <table style="min-width:560px">
+              <thead><tr><th>문제 영역</th><th>하위 요소</th><th>측정 지표</th><th>상태</th></tr></thead>
+              <tbody>
+                <tr><td>도입 담당자</td><td>전파 자료 부재, 설명 시간 부족</td><td>첫 초대까지 걸린 일수</td><td><span class="tag t-evid">🔵 근거 있음</span></td></tr>
+                <tr><td>팀원</td><td>—</td><td>초대 → 가입 전환율</td><td><span class="tag t-unknown">⚪ 미확인</span></td></tr>
+                <tr><td>관리자</td><td>—</td><td>권한 설정 완료율</td><td><span class="tag t-unknown">⚪ 미확인</span></td></tr>
+                <tr><td>제품 자체</td><td>—</td><td>—</td><td><span class="tag t-gap">⚠️ 사용자 유형이 아님</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="checkrow">
+            <span class="check ok">✓ 가지 4개 — 권장 범위</span>
+            <span class="check ok">✓ 상위 항목에 해결책이 섞이지 않음</span>
+            <span class="check warn">! “제품 자체”는 사용자 유형이 아닙니다. 기준이 둘로 섞였습니다</span>
+            <span class="check">지표 미입력 1개</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px">
+        <button class="btn btn-ghost">← 03 문제 정의</button><button class="btn">이 단계 완료하고 05로 →</button>
+      </div>
+      <p class="note" style="margin-top:18px">완료하지 않고 넘어가도 됩니다. 비어 있는 항목은 10단계 회고에서 모아 보여드립니다.</p>
+    </section>
+
+    <!-- ─────── 05 가설 ─────── -->
+    <section class="stepview" id="s5">
+      <div class="stephead">
+        <div class="stepicon">💡</div>
+        <div>
+          <span class="cat c-val">검증 계열 · 05</span>
+          <h1>틀릴 수 있는 형태로 적습니다</h1>
+          <p class="purpose">원인 가설 셋과 백업 하나를 틀릴 수 있게 적습니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">질문 4 / 5</span><span class="qdots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span></header>
+        <div class="qbody">
+          <p class="qtext">이 가설들이 전부 틀렸다면, 남는 가능성은 무엇인가요?</p>
+          <p class="qhelp">백업 가설은 보통 “서비스 밖”에 있습니다. 시장, 조직, 타이밍처럼 내가 못 바꾸는 것을 의심해봅니다.</p>
+          <div class="frow" style="margin-top:20px">
+            <label>유형</label>
+            <div class="chips">
+              <button class="chip">🟣 원인</button><button class="chip">🟢 해결</button>
+              <button class="chip">🔵 지표</button><button class="chip" aria-pressed="true">⚪ 백업</button>
+            </div>
+          </div>
+          <div class="frow"><label>가설</label><input class="inp" value="애초에 팀 단위로 쓸 필요가 없는 업무에 도입된 계정이 섞여 있다"></div>
+          <div class="frow"><label>맞다면 보일 것</label><input class="inp" value="1인 계정에서도 갱신율이 낮지 않다"></div>
+        </div>
+        <div class="qfoot"><button class="btn btn-ghost btn-sm">← 이전</button><button class="btn btn-sm">다음 질문 →</button><span class="tiny" style="margin-left:auto">남은 질문 1개 · 지표 가설</span></div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">💡 가설 카드 덱</span><span class="tiny" style="margin-left:auto">색이 곧 가설의 종류입니다</span></header>
+        <div class="body">
+          <div class="deck">
+            <div class="hcard"><div class="hd" style="color:var(--hypo)"><span class="emo">🟣</span> 원인 가설 1</div>담당자가 팀에 설명할 자료를 직접 만들어야 해서 전파가 멈춘다</div>
+            <div class="hcard"><div class="hd" style="color:var(--hypo)"><span class="emo">🟣</span> 원인 가설 2</div>초대 흐름 중간에 마찰이 있어 팀원이 가입까지 오지 못한다</div>
+            <div class="hcard"><div class="hd" style="color:var(--hypo)"><span class="emo">🟣</span> 원인 가설 3</div>담당자 한 사람에게만 의존해 그가 바쁘면 전파가 멈춘다</div>
+            <div class="hcard solve"><div class="hd" style="color:var(--fam-def)"><span class="emo">🟢</span> 해결 가설</div>첫 로그인 직후 팀 초대 단계를 넣으면 30일 내 2인 이상 활성 비율이 오른다</div>
+            <div class="hcard metric"><div class="hd" style="color:var(--evid)"><span class="emo">🔵</span> 지표 가설</div>2인 이상 활성 계정의 90일 갱신율이 1인 계정보다 높다</div>
+            <div class="hcard backup"><div class="hd"><span class="emo">⚪</span> 백업 가설</div>팀 단위로 쓸 필요가 없는 업무에 도입된 계정이 섞여 있다</div>
+          </div>
+          <div class="checkrow">
+            <span class="check ok">✓ 원인 가설 3개</span><span class="check ok">✓ 백업 가설 있음</span>
+            <span class="check ok">✓ 모든 가설에 “맞다면 보일 것”이 붙음</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px"><button class="btn">이 단계 완료하고 06으로 →</button></div>
+    </section>
+
+    <!-- ─────── 06 근거·검증 ─────── -->
+    <section class="stepview" id="s6">
+      <div class="stephead">
+        <div class="stepicon">🔍</div>
+        <div>
+          <span class="cat c-val">검증 계열 · 06</span>
+          <h1>무엇을 보면 접을지 먼저 정합니다</h1>
+          <p class="purpose">무엇을 보면 가설을 접을지 먼저 정합니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">질문 3 / 4 · 가설 3</span><span class="qdots"><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span></header>
+        <div class="qbody">
+          <p class="qtext">가설 3을 기각하려면 어떤 결과가 나와야 하나요?</p>
+          <p class="qhelp">“담당자 한 사람에게만 의존해 전파가 멈춘다” — 이 가설이 틀렸다고 인정할 조건을 먼저 씁니다.</p>
+          <div class="frow" style="margin-top:20px"><label>필요한 데이터</label><input class="inp" value="계정 규모별 초대 발송자 수 분포"></div>
+          <div class="frow"><label>검증 방법</label><input class="inp" value="계정 규모 3구간 코호트 비교"></div>
+          <div class="frow"><label>판단 기준</label><input class="inp" value="규모와 무관하게 초대 발송자가 1명이면 기각"></div>
+        </div>
+        <div class="qfoot"><button class="btn btn-ghost btn-sm">← 이전 가설</button><button class="btn btn-sm">다음 가설 →</button></div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">🔍 검증 매트릭스</span><span class="tiny" style="margin-left:auto">판단 기준이 빈 행은 검증 계획이 아닙니다</span></header>
+        <div class="body">
+          <div class="scrollx">
+            <table style="min-width:740px">
+              <thead><tr><th>가설</th><th>맞다면 보일 현상</th><th>필요한 데이터</th><th>방법</th><th>판단 기준</th><th>결과</th></tr></thead>
+              <tbody>
+                <tr><td>1 · 전파 자료 부재</td><td>인터뷰에서 반복 언급</td><td>도입 담당자 인터뷰</td><td>6건 인터뷰</td><td>6건 중 4건 이상</td><td><span class="tag t-evid">지지 5/6</span></td></tr>
+                <tr><td>2 · 초대 흐름 마찰</td><td>초대 후 가입 전환 저조</td><td>초대·가입 로그</td><td>퍼널 분석</td><td>전환율 60% 미만</td><td><span class="tag t-evid">지지 41%</span></td></tr>
+                <tr><td>3 · 담당자 1인 의존</td><td>대형 계정일수록 전파 활발</td><td>규모별 발송자 수</td><td>코호트 비교</td><td>규모 무관하면 기각</td><td><span class="tag t-unknown">진행 중</span></td></tr>
+                <tr><td>백업 · 1인 업무 계정</td><td>1인 계정도 갱신율 정상</td><td>인원수 × 갱신율</td><td>교차표</td><td style="color:var(--attn)">⚠️ 미입력</td><td><span class="tag t-unknown">—</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="checkrow">
+            <span class="check ok">✓ 가설 3개에 판단 기준 있음</span><span class="check ok">✓ 정량 · 정성 근거를 함께 씀</span>
+            <span class="check warn">! 백업 가설에 판단 기준이 없습니다</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px"><button class="btn">이 단계 완료하고 07로 →</button></div>
+    </section>
+
+    <!-- ─────── 07 대안·결정 ─────── -->
+    <section class="stepview" id="s7">
+      <div class="stephead">
+        <div class="stepicon">⚖️</div>
+        <div>
+          <span class="cat c-val">검증 계열 · 07</span>
+          <h1>기준을 먼저 정하고 비교합니다</h1>
+          <p class="purpose">기준을 먼저 정하고 대안을 비교합니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">질문 1 / 4</span><span class="qdots"><i class="cur"></i><i></i><i></i><i></i></span></header>
+        <div class="qbody">
+          <p class="qtext">무엇을 기준으로 비교하겠습니까?</p>
+          <p class="qhelp">대안을 적기 전에 기준부터 고릅니다. 세 개에서 다섯 개가 적당합니다.</p>
+          <div class="chips" style="margin-top:20px">
+            <button class="chip" aria-pressed="true">🙂 사용자 효과</button><button class="chip" aria-pressed="true">💰 사업 효과</button>
+            <button class="chip" aria-pressed="true">🔧 구현 난이도</button><button class="chip" aria-pressed="true">⏱️ 검증 속도</button>
+            <button class="chip">🧾 비용</button><button class="chip">🔁 운영 복잡도</button>
+            <button class="chip">⚠️ 리스크</button><button class="chip">📈 확장성</button>
+          </div>
+        </div>
+        <div class="qfoot"><button class="btn btn-sm">다음 질문 →</button><span class="tiny" style="margin-left:auto">남은 질문 3개 · 대안 입력, 점수, 선택 이유</span></div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">⚖️ 대안 비교 스코어</span><span class="tiny" style="margin-left:auto">고른 기준으로만 채점합니다</span></header>
+        <div class="body">
+          <div class="scrollx">
+            <table style="min-width:700px">
+              <thead><tr><th>대안</th><th>사용자 효과</th><th>사업 효과</th><th>구현 난이도</th><th>검증 속도</th><th>결과</th></tr></thead>
+              <tbody>
+                <tr class="pick-row"><td>A · 첫 로그인 후 팀 초대 단계</td><td><span class="wbar"><i style="width:80%"></i></span></td><td><span class="wbar"><i style="width:70%"></i></span></td><td>낮음</td><td>2주</td><td>✅ 선택</td></tr>
+                <tr><td>B · 역할별 시작 가이드 자동 생성</td><td><span class="wbar"><i style="width:90%"></i></span></td><td><span class="wbar"><i style="width:60%"></i></span></td><td>높음</td><td>6주</td><td>2순위</td></tr>
+                <tr><td>C · 미초대 계정 리마인드 메일</td><td><span class="wbar"><i style="width:40%"></i></span></td><td><span class="wbar"><i style="width:35%"></i></span></td><td>낮음</td><td>1주</td><td>3순위</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card" style="margin-top:18px;border-left:3px solid var(--deep)">
+            <span class="label label-deep">결론</span>
+            <p style="margin-top:8px;font-size:15px;line-height:1.95">A안을 우선 적용합니다. 판단 기준은 사용자 효과 · 구현 난이도 · 검증 속도 세 가지였고,
+            2주 안에 붙일 수 있으면서 <b>30일 내 2인 이상 활성 비율</b>이라는 단일 지표로 효과를 바로 확인할 수 있기 때문입니다.
+            B안은 효과가 더 크지만 6주가 걸려 이번 갱신 시즌을 놓칩니다.</p>
+          </div>
+          <div class="checkrow">
+            <span class="check ok">✓ 대안 3개</span><span class="check ok">✓ 기준을 대안보다 먼저 정함</span>
+            <span class="check ok">✓ 고르지 않은 이유가 적혀 있음</span><span class="check warn">! 비용 기준을 빼고 비교했습니다</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px"><button class="btn">이 단계 완료하고 08로 →</button></div>
+    </section>
+
+    <!-- ─────── 08 해결안 설계 ─────── -->
+    <section class="stepview" id="s8">
+      <div class="stephead">
+        <div class="stepicon">🛠️</div>
+        <div>
+          <span class="cat c-exp">표현 계열 · 08</span>
+          <h1>사용자의 행동이 어떻게 달라지는지 그립니다</h1>
+          <p class="purpose">기능이 아니라 사용자 행동의 변화를 그립니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">질문 3 / 5</span><span class="qdots"><i class="on"></i><i class="on"></i><i class="cur"></i><i></i><i></i></span></header>
+        <div class="qbody">
+          <p class="qtext">이 흐름에서 예상되는 예외 상황은 무엇인가요?</p>
+          <p class="qhelp">초대할 팀원이 없거나, 이미 가입된 도메인이거나, 권한이 없는 경우를 생각해봅니다.</p>
+          <input class="inp" style="margin-top:20px" value="개인 계정으로 도입한 1인 사용자에게 초대 단계가 강제로 뜨는 경우">
+          <div class="row" style="margin-top:14px"><span class="label">처리</span><input class="inp" value="건너뛰기 가능하되 7일 뒤 한 번만 다시 안내" style="flex:1"></div>
+        </div>
+        <div class="qfoot"><button class="btn btn-ghost btn-sm">← 이전</button><button class="btn btn-sm">다음 질문 →</button><span class="tiny" style="margin-left:auto">남은 질문 2개 · 실행 순서, 조율 사항</span></div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">🛠️ 사용자 FLOW</span><span class="tiny" style="margin-left:auto">파란 칸이 새로 넣는 단계입니다</span></header>
+        <div class="body">
+          <div class="chain">
+            <div class="lnk"><span class="st">기존</span><b>가입</b><span>도입 담당자 계정 생성</span></div>
+            <div class="lnk"><span class="st">기존</span><b>첫 로그인</b><span>워크스페이스 생성</span></div>
+            <div class="lnk new"><span class="st">✨ 신규</span><b>팀 초대</b><span>역할 선택 + 이메일 3칸<br>건너뛰기 가능</span></div>
+            <div class="lnk new"><span class="st">✨ 신규</span><b>역할별 가이드</b><span>담당자·팀원·관리자 3종<br>바로 공유 가능</span></div>
+            <div class="lnk"><span class="st">기존</span><b>핵심 기능 사용</b><span>2인 이상이면 활성으로 집계</span></div>
+          </div>
+          <div class="scrollx" style="margin-top:20px">
+            <table style="min-width:580px">
+              <thead><tr><th>구분</th><th>내용</th><th>담당</th></tr></thead>
+              <tbody>
+                <tr><td>🧱 기능</td><td>초대 단계 UI, 역할별 가이드 템플릿 3종, 7일 리마인드</td><td>프로덕트</td></tr>
+                <tr><td>📋 정책</td><td>건너뛰기 허용. 1인 계정은 7일 뒤 1회만 재안내</td><td>프로덕트</td></tr>
+                <tr><td>🗄️ 데이터</td><td>초대 발송·수락 이벤트, 2인 이상 활성 플래그</td><td>데이터</td></tr>
+                <tr><td>⚠️ 예외</td><td>이미 가입된 도메인은 초대 대신 합류 안내</td><td>프로덕트</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="checkrow">
+            <span class="check ok">✓ 흐름의 시작과 끝이 이어짐</span><span class="check ok">✓ 예외 처리 2건 명시</span>
+            <span class="check">실행 순서 미입력</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px"><button class="btn">이 단계 완료하고 09로 →</button></div>
+    </section>
+
+    <!-- ─────── 09 결과 평가 ─────── -->
+    <section class="stepview" id="s9">
+      <div class="stephead">
+        <div class="stepicon">📊</div>
+        <div>
+          <span class="cat c-exp">표현 계열 · 09</span>
+          <h1>성공과 실패의 선을 미리 긋습니다</h1>
+          <p class="purpose">실행 전이면 성공 기준과 가드레일을 적습니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+        <span class="tag t-unknown">⚪ 실행 전 · 계획 상태</span>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">질문 2 / 4</span><span class="qdots"><i class="on"></i><i class="cur"></i><i></i><i></i></span></header>
+        <div class="qbody">
+          <p class="qtext">이 방향이 잘못됐다는 걸 무엇으로 알 수 있나요?</p>
+          <p class="qhelp">가드레일 지표입니다. 주 지표가 올라도 이게 나빠지면 멈춰야 하는 것을 적습니다.</p>
+          <div class="frow" style="margin-top:20px"><label>가드레일</label><input class="inp" value="초대 메일 스팸 신고율"></div>
+          <div class="frow"><label>한계선</label><input class="inp" value="0.3% 초과 시 리마인드 중단"></div>
+        </div>
+        <div class="qfoot"><button class="btn btn-ghost btn-sm">← 이전</button><button class="btn btn-sm">다음 질문 →</button><span class="tiny" style="margin-left:auto">남은 질문 2개</span></div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">📊 지표 카드 · 가설 판정</span><span class="tiny" style="margin-left:auto">실행 후 실제 수치가 들어옵니다</span></header>
+        <div class="body">
+          <div class="kpis">
+            <div class="kpi">
+              <div class="nm"><span class="emo">👥</span> 30일 내 2인 이상 활성</div>
+              <div class="vals"><span class="b4">28%</span><span class="ar">→</span><span class="af">45%</span></div>
+              <div class="gd">목표 · 실행 전</div>
+            </div>
+            <div class="kpi">
+              <div class="nm"><span class="emo">✉️</span> 초대 → 가입 전환율</div>
+              <div class="vals"><span class="b4">41%</span><span class="ar">→</span><span class="af">60%</span></div>
+              <div class="gd">목표 · 실행 전</div>
+            </div>
+            <div class="kpi" style="border-left:3px solid var(--attn)">
+              <div class="nm"><span class="emo">🚧</span> 스팸 신고율</div>
+              <div class="vals"><span class="b4">0.1%</span><span class="ar">≤</span><span class="af" style="color:var(--attn)">0.3%</span></div>
+              <div class="gd">가드레일 · 넘으면 중단</div>
+            </div>
+          </div>
+          <div style="margin-top:20px">
+            <span class="label">가설 판정</span>
+            <div class="row" style="flex-wrap:wrap;margin-top:11px">
+              <span class="tag t-evid">✅ 가설 1 지지</span><span class="tag t-evid">✅ 가설 2 지지</span>
+              <span class="tag t-unknown">❌ 가설 3 기각</span><span class="tag t-unknown">⚪ 백업 미검증</span>
+            </div>
+          </div>
+          <div class="checkrow">
+            <span class="check ok">✓ 성공 기준이 수치로 있음</span><span class="check ok">✓ 가드레일 지표 있음</span>
+            <span class="check ok">✓ 계획 상태로 표시됨</span><span class="check">예상 밖 결과 미입력</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px"><button class="btn">이 단계 완료하고 10으로 →</button></div>
+    </section>
+
+    <!-- ─────── 10 결론·회고 ─────── -->
+    <section class="stepview" id="s10">
+      <div class="stephead">
+        <div class="stepicon">🪞</div>
+        <div>
+          <span class="cat c-exp">표현 계열 · 10</span>
+          <h1>어디서 논리가 뛰었는지 찾습니다</h1>
+          <p class="purpose">결과가 아니라 사고 과정의 빈틈을 찾습니다.</p>
+        </div>
+      </div>
+      <div class="spread" style="margin-bottom:18px">
+        <div class="modes"><button aria-pressed="true">자유 작성</button><button aria-pressed="false">질문 따라가기</button></div>
+      </div>
+
+      <section class="qcard">
+        <header><span class="label">질문 6 / 8</span><span class="qdots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i><i></i></span></header>
+        <div class="qbody">
+          <p class="qtext">근거 없이 논리가 뛴 지점은 어디인가요?</p>
+          <p class="qhelp">아래 체인에서 표시된 칸을 눌러보세요. 그 단계에서 실제로 쓴 문장으로 이동합니다.</p>
+          <div class="editor" contenteditable="true" data-step="s10" style="margin-top:20px">07번이다. 대안을 비교할 때 비용을 기준에 넣지 않았다. 세 대안의 개발 공수를 같은 척도로 환산하지 않아서 “구현 난이도 낮음”이 감으로 남았다.</div>
+          <div class="edhint"><span class="emo">✨</span> 회고 문장도 드래그하면 더 파고드는 질문이 뜹니다</div>
+        </div>
+        <div class="qfoot"><button class="btn btn-ghost btn-sm">← 이전</button><button class="btn btn-sm">다음 질문 →</button><span class="tiny" style="margin-left:auto">남은 질문 2개</span></div>
+      </section>
+
+      <section class="dock">
+        <header><span class="label label-deep">🪞 논리 체인 한 장</span><span class="tiny" style="margin-left:auto">끊긴 칸이 표시됩니다</span></header>
+        <div class="body">
+          <div class="lchain">
+            <div class="lk"><span class="st">01</span><b>🎯 맥락</b></div>
+            <div class="lk"><span class="st">02</span><b>👀 관찰</b></div>
+            <div class="lk"><span class="st">03</span><b>📌 문제</b></div>
+            <div class="lk"><span class="st">04</span><b>🌳 구조</b></div>
+            <div class="lk"><span class="st">05</span><b>💡 가설</b></div>
+            <div class="lk"><span class="st">06</span><b>🔍 근거</b></div>
+            <div class="lk brk"><span class="st">07</span><b>⚠️ 대안</b></div>
+            <div class="lk"><span class="st">08</span><b>🛠️ 설계</b></div>
+            <div class="lk"><span class="st">09</span><b>📊 결과</b></div>
+            <div class="lk"><span class="st">10</span><b>🪞 회고</b></div>
+          </div>
+
+          <div class="card" style="margin-top:20px;border-left:3px solid var(--attn);background:var(--attn-bg)">
+            <span class="label" style="color:var(--attn)">끊긴 구간 · 06 → 07</span>
+            <p style="margin-top:8px;font-size:14.5px;line-height:1.9">근거에서 대안으로 넘어갈 때 비용 기준이 빠졌습니다.
+            06번에서 “개발 공수”를 언급했지만 07번 비교표에는 그 항목이 없습니다.</p>
+          </div>
+
+          <div class="checkrow">
+            <span class="check ok">✓ 10단계 전부 응답 있음</span><span class="check ok">✓ 회고에서 빈틈을 스스로 찾음</span>
+            <span class="check warn">! 06 → 07 구간 끊김 (회고에 기록됨)</span>
+          </div>
+        </div>
+      </section>
+      <div class="btn-row" style="margin-top:32px">
+        <a class="btn" href="portfolio.html">결과물 만들기 →</a>
+        <a class="btn btn-ghost" href="community.html">🤝 커뮤니티에 피드백 요청</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ RIGHT ============ -->
+  <aside class="zone-r">
+    <div class="rzhandle" id="rzR"></div>
+    <div class="rtabs" role="tablist">
+      <button role="tab" aria-selected="true" data-pane="p-ex"><span class="emo">📚</span> 예시</button>
+      <button role="tab" aria-selected="false" data-pane="p-coach"><span class="emo">🧭</span> 코치</button>
+      <button role="tab" aria-selected="false" data-pane="p-lib"><span class="emo">🗄️</span> 저장소</button>
+      <button role="tab" aria-selected="false" data-pane="p-draw"><span class="emo">✏️</span> 도식화</button>
+      <button class="ztgl" id="tglR" title="예시·코치 패널 접기">−</button>
+    </div>
+
+    <div class="rpane" id="p-ex" data-on>
+      <div class="spread"><span class="label">현재 단계 예시</span><span class="cat c-saas">🧩 B2B SaaS</span></div>
+      <div class="chips" style="margin-top:11px">
+        <button class="chip">🛒 커머스</button><button class="chip">💳 핀테크</button>
+        <button class="chip" aria-pressed="true">🧩 B2B SaaS</button><button class="chip">🎬 콘텐츠</button>
+      </div>
+
+      <div class="exblock" data-ex="s1"><div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">맥락 카드</span></div>
+        <p>목표를 “활성화율 개선”이 아니라 <b>“갱신 판단 시점 전에 팀 사용 만들기”</b>로 적었습니다.</p>
+        <p class="why">목표에 기한이 들어가면 대안의 우선순위가 자동으로 정해집니다.</p></div></div>
+      <div class="exblock" data-ex="s2"><div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">사실 · 해석 분리</span></div>
+        <p><span class="tag t-fact">사실</span> 결제 전 이탈률이 12%에서 19%로 올랐다<br><span class="tag t-interp">해석</span> 결제 단계가 복잡해졌을 가능성이 있다</p>
+        <p class="why">“결제가 복잡해서 이탈이 늘었다”는 한 문장은 관찰과 가설이 붙은 형태입니다.</p></div></div>
+      <div class="exblock" data-ex="s3"><div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">한 줄 문제 정의</span></div>
+        <p>중고 거래 경험이 적은 초보 판매자가 첫 상품을 등록하면서 적절한 판매 가격을 정하려 하지만, 가격을 판단할 기준이 없어 등록을 중단한다.</p>
+        <p class="why">“가격 추천 기능이 없어서”라고 쓰면 해결책이 문제 안에 들어갑니다.</p></div></div>
+      <div class="exblock" data-ex="s4">
+        <div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">프로세스 기준</span></div>
+          <ul class="tree"><li><span class="node">전환율이 낮은 이유</span><ul><li><span class="node">유입 단계</span></li><li><span class="node">폼 입력</span></li><li><span class="node">인증</span></li></ul></li></ul>
+          <p class="why">순서로 나눴기 때문에 가지끼리 겹치지 않습니다.</p></div>
+      </div>
+      <div class="exblock" data-ex="s5"><div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">백업 가설</span></div>
+        <p>“신규 사용자의 낮은 재주문율은 서비스 내부 경험이 아니라 지역별 공급 부족에서 나올 수 있다”</p>
+        <p class="why">백업 가설은 대개 내가 못 바꾸는 쪽에 있습니다. 먼저 배제해야 시간을 아낍니다.</p></div></div>
+      <div class="exblock" data-ex="s6"><div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">데이터 없이 검증 설계</span></div>
+        <p>필요한 데이터 / 확보 방법 / 대상 사용자군 / 관찰 기간 / 채택 기준 / 틀렸을 때 다음 행동</p>
+        <p class="why">“데이터가 없어 검증 못 했다”에서 끝내지 않고 여섯 칸을 채우는 것이 훈련입니다.</p></div></div>
+      <div class="exblock" data-ex="s7"><div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">결론 표현</span></div>
+        <p>“A안을 우선 적용하겠습니다. 기준은 사용자 영향 · 구현 난이도 · 검증 속도 셋이었고, A안은 단기간에 구현되고 지표로 확인되며 실패해도 비용이 낮기 때문입니다.”</p>
+        <p class="why">결론 → 기준 → 이유 순서. 기준을 밝히면 반박이 논쟁이 아니라 검토가 됩니다.</p></div></div>
+      <div class="exblock" data-ex="s8"><div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">설계 순서</span></div>
+        <p>문제 → 사용자 행동 변화 목표 → 핵심 기능·정책 → 사용자 FLOW → 화면·데이터·운영 → 실행 계획</p>
+        <p class="why">기능부터 적으면 왜 그 기능인지가 사라집니다. 행동 변화를 먼저 씁니다.</p></div></div>
+      <div class="exblock" data-ex="s9"><div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">결과가 없는 프로젝트</span></div>
+        <p>검증 계획 / 예상 결과 / 성공 판단 기준 / 실패 시 다음 액션 / 추가 확인 데이터</p>
+        <p class="why">실행 전이어도 이 다섯 개를 쓰면 “계획”으로 정직하게 보여줄 수 있습니다.</p></div></div>
+      <div class="exblock" data-ex="s10"><div class="ex"><div class="exhead"><span class="tag t-plain">참고용</span><span class="tiny">회고 질문</span></div>
+        <p>분류 기준이 중간에 바뀌지 않았는가 · 결론에 유리한 근거만 골랐는가 · 실제 데이터가 있었다면 결론이 달라졌을까</p>
+        <p class="why">결과가 아니라 사고 과정을 묻는 질문이라 다음 케이스에 그대로 쓸 수 있습니다.</p></div></div>
+
+      <p class="tiny" style="margin-top:18px">예시는 입력란에 채워지지 않습니다. 먼저 쓰고 나서 비교하세요.</p>
+    </div>
+
+    <div class="rpane" id="p-coach">
+      <div class="coachbtns">
+        <button class="coachbtn"><span class="emo emo-lg">🧱</span><span><b>막혔어요</b><span>다음 한 줄을 여는 질문을 받습니다</span></span></button>
+        <button class="coachbtn"><span class="emo emo-lg">🔭</span><span><b>더 넓게 보고 싶어요</b><span>빠졌을 수 있는 관점을 물어봅니다</span></span></button>
+        <button class="coachbtn"><span class="emo emo-lg">🧐</span><span><b>이거 맞나요?</b><span>지금 쓴 내용의 논리 공백을 짚어줍니다</span></span></button>
+      </div>
+      <span class="label">방금 받은 점검</span>
+      <div class="coachmsg" style="margin-top:11px">
+        네 번째 가지 <b>“제품 자체”</b>는 사용자 유형이 아닙니다. 앞의 세 가지는 사람으로 나눴는데 이것만 대상이 다릅니다.
+        <br><br><mark>기준이 둘로 섞이면</mark> 나중에 “어느 가지부터 볼까”를 정할 수 없습니다.
+      </div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-sm">반영함</button><button class="btn btn-ghost btn-sm">반영 안 함</button>
+      </div>
+      <p class="tiny" style="margin-top:12px">반영하지 않은 것도 기록에 남습니다.</p>
+      <div class="note" style="margin-top:24px">코치는 답을 대신 쓰지 않습니다. 한 글자도 쓰지 않았을 때는 켜지지 않습니다.</div>
+    </div>
+
+    <div class="rpane" id="p-lib">
+      <span class="label">이 단계에 쓸 만한 질문</span>
+      <div class="pullitem"><span class="tag t-plain">❓ 질문 저장소</span><p>“이 분류에서 빠진 사람은 누구인가?”</p><button class="btn btn-ghost btn-sm" style="margin-top:10px">가져오기</button></div>
+      <div class="pullitem"><span class="tag t-plain">❓ 질문 저장소</span><p>“기준을 바꾸면 결론이 달라지는가?”</p><button class="btn btn-ghost btn-sm" style="margin-top:10px">가져오기</button></div>
+      <span class="label" style="display:block;margin-top:26px">관련 관찰 기록</span>
+      <div class="pullitem"><span class="tag t-fact">🟢 사실</span><p>“초대 시도 후 가입 완료 41%” — 11월 12일, 업무</p><button class="btn btn-ghost btn-sm" style="margin-top:10px">가지로 추가</button></div>
+      <div class="pullitem"><span class="tag t-interp">🟡 해석</span><p>“관리자 권한 설정에서 막히는 것 같다” — 11월 9일</p><button class="btn btn-ghost btn-sm" style="margin-top:10px">가지로 추가</button></div>
+      <a class="btn btn-ghost btn-sm" href="library.html" style="margin-top:20px">저장소 전체 열기</a>
+    </div>
+
+    <!-- (8) 도식 연습장 -->
+    <div class="rpane" id="p-draw">
+      <div class="draw-tools">
+        <button data-tool="rect" class="on">▭ 네모</button>
+        <button data-tool="diamond">◇ 분기</button>
+        <button data-tool="text">T 텍스트</button>
+        <span class="sep"></span>
+        <button data-tool="arrow">→ 화살표</button>
+        <button data-tool="move">✋ 이동</button>
+        <span class="sep"></span>
+        <button id="drawClear">🗑 지우기</button>
+      </div>
+      <div class="draw-canvas" id="drawCanvas">
+        <svg class="draw-svg" id="drawSvg"><defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker>
+        </defs></svg>
+      </div>
+      <div class="draw-hint">네모·분기·텍스트를 고르고 빈 곳을 클릭해 놓으세요. <b>화살표</b>는 도형 두 개를 차례로 클릭하면 이어집니다. 더블클릭으로 글자 수정, <b>이동</b>으로 끌어 옮깁니다.</div>
+    </div>
+  </aside>
+</div>
+
+<!-- ============ 생각 확장 질문 팝오버 ============ -->
+<div class="tp" id="tp" role="dialog" aria-label="생각 확장 질문">
+  <header>
+    <span class="label label-deep"><span class="emo">✨</span> 생각 확장</span>
+    <p class="sel" id="tpSel" style="margin-top:7px"></p>
+  </header>
+  <div class="body">
+    <span class="label">이 조각은 무엇인가요</span>
+    <div class="tagrow" id="tpTags">
+      <button class="tagbtn" data-kind="fact" style="color:var(--fact)">🟢 사실</button>
+      <button class="tagbtn" data-kind="interp" style="color:var(--interp)">🟡 해석</button>
+      <button class="tagbtn" data-kind="hypo" style="color:var(--hypo)">🟣 가설</button>
+      <button class="tagbtn" data-kind="gap" style="color:var(--attn)">⚠️ 근거 없음</button>
+    </div>
+    <span class="label" style="display:block;margin-top:16px">파고들 질문 고르기</span>
+    <div class="qs" id="tpQs"></div>
+  </div>
+  <footer>
+    <button class="btn btn-ghost btn-sm" id="tpSave">❓ 질문 저장소에 담기</button>
+    <button class="btn btn-ghost btn-sm" id="tpClose" style="margin-left:auto">닫기</button>
+  </footer>
+</div>
+
+<script>
+/* ---------- 테마 토글 ---------- */
+const root = document.documentElement, thm = document.getElementById('thm');
+const saved = localStorage.getItem('lf-theme');
+if (saved) root.setAttribute('data-theme', saved);
+function isDark(){
+  const set = root.getAttribute('data-theme');
+  return set === 'dark' || (!set && matchMedia('(prefers-color-scheme:dark)').matches);
+}
+function syncThm(){ thm.textContent = isDark() ? '☀️' : '🌙'; }
+syncThm();
+thm.addEventListener('click', () => {
+  const next = isDark() ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('lf-theme', next);
+  syncThm();
+});
+
+/* ---------- 단계 전환 ---------- */
+const steps = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10'];
+const names = ['🎯 목적·맥락','👀 현상 관찰','📌 문제 정의','🌳 문제 분해','💡 가설 설정',
+               '🔍 근거·검증','⚖️ 대안·결정','🛠️ 해결안 설계','📊 결과 평가','🪞 결론·회고'];
+const ms = document.getElementById('mstep');
+steps.forEach((s,i) => {
+  const b = document.createElement('button');
+  b.dataset.step = s; b.textContent = String(i+1).padStart(2,'0') + ' ' + names[i];
+  if (s === 's4') b.setAttribute('aria-current','step');
+  ms.appendChild(b);
+});
+function show(id){
+  const i = steps.indexOf(id);
+  document.querySelectorAll('.stepview').forEach(v => v.removeAttribute('data-on'));
+  document.getElementById(id).setAttribute('data-on','');
+  document.querySelectorAll('#rail li').forEach((li,k) => {
+    const btn = li.querySelector('button');
+    li.classList.remove('now','done');
+    if (k < i) li.classList.add('done');
+    if (k === i){ li.classList.add('now'); btn.setAttribute('aria-current','step'); }
+    else btn.removeAttribute('aria-current');
+  });
+  ms.querySelectorAll('button').forEach(b =>
+    b.dataset.step === id ? b.setAttribute('aria-current','step') : b.removeAttribute('aria-current'));
+  document.querySelectorAll('.exblock').forEach(e => e.removeAttribute('data-on'));
+  const ex = document.querySelector('.exblock[data-ex="'+id+'"]');
+  if (ex) ex.setAttribute('data-on','');
+  document.getElementById('pgN').textContent = i + 1;
+  document.querySelectorAll('#growbar i').forEach((lf, k) => { lf.className = k < i ? 'on' : (k === i ? 'cur' : ''); });
+  closeTp();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('#rail button, #mstep button')
+  .forEach(b => b.addEventListener('click', () => show(b.dataset.step)));
+
+document.querySelectorAll('.rtabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.rtabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  document.querySelectorAll('.rpane').forEach(p => p.removeAttribute('data-on'));
+  document.getElementById(b.dataset.pane).setAttribute('data-on','');
+}));
+document.addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if(!c) return;
+  const g = c.closest('.chips'); if(!g) return;
+  const multi = g.querySelectorAll('.chip[aria-pressed="true"]').length > 1;
+  if (multi) c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+  else g.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === c)));
+});
+document.querySelectorAll('.modes').forEach(g => g.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+}));
+
+/* ============================================================
+   생각 인터랙션 — 하이라이트하면 확장 질문 팝업
+   ============================================================ */
+const tp = document.getElementById('tp'),
+      tpSel = document.getElementById('tpSel'),
+      tpQs = document.getElementById('tpQs');
+let range = null, hostStep = 's2';
+
+const BANK = {
+  s1:[['🎯','이 목표는 무엇으로 달성 여부를 판단하나요?'],['👥','이건 누구에게 가장 중요한 문제인가요?'],
+      ['⏰','지금이 아니면 안 되는 이유가 있나요?'],['🔒','이 제약을 바꿀 수 있다면 무엇이 달라지나요?']],
+  s2:[['🧐','이건 사실인가요, 해석인가요?'],['👀','직접 본 건가요, 들은 건가요?'],
+      ['🔁','언제부터, 얼마나 자주 나타났나요?'],['🙅','반대 사례를 본 적은 없나요?']],
+  s3:[['🎯','이 문제를 겪는 사람을 더 좁힐 수 있나요?'],['🚫','여기에 해결책이 섞여 있지는 않나요?'],
+      ['💥','이 문제가 해결되면 무엇이 달라지나요?'],['🧩','이건 원인인가요, 현상인가요?']],
+  s4:[['✂️','이 항목을 더 쪼갤 수 있나요?'],['🔀','다른 기준으로 나누면 어떻게 되나요?'],
+      ['🕳️','이 분류에서 빠진 사람은 누구인가요?'],['📏','이 가지의 측정 지표는 무엇인가요?']],
+  s5:[['🔬','이 가설이 맞다면 무엇이 관찰되어야 하나요?'],['🙃','반대로 생각하면 어떻게 되나요?'],
+      ['🧨','이게 전부 틀렸다면 남는 가능성은?'],['1️⃣','원인을 하나로 좁힌 근거가 있나요?']],
+  s6:[['🛑','무엇을 보면 이 가설을 접겠습니까?'],['⚖️','비교 대상 없이 이 숫자를 읽고 있지는 않나요?'],
+      ['🗓️','어느 기간, 어느 사용자군을 볼 건가요?'],['🕵️','다른 해석이 가능한 데이터는 아닌가요?']],
+  s7:[['📋','비교 기준을 대안보다 먼저 정했나요?'],['❌','고르지 않은 대안은 왜 접었나요?'],
+      ['💣','이 선택이 틀렸을 때의 비용은?'],['🧾','빠진 기준은 없나요?']],
+  s8:[['🚶','사용자 행동이 구체적으로 어떻게 달라지나요?'],['🌪️','예외 상황은 무엇인가요?'],
+      ['🤝','누구와 조율해야 하나요?'],['🪜','어떤 순서로 실행하나요?']],
+  s9:[['🎯','성공 기준을 수치로 적을 수 있나요?'],['🚧','반대로 나빠지면 안 되는 지표는?'],
+      ['🤔','예상과 다른 결과가 나오면 무엇을 하나요?'],['📆','언제 판단하나요?']],
+  s10:[['🕳️','근거 없이 넘어간 구간은 어디인가요?'],['🔄','중간에 기준이 바뀌지는 않았나요?'],
+       ['📊','데이터가 있었다면 결론이 달라졌을까요?'],['➡️','다음엔 어떤 순서로 접근하겠습니까?']]
+};
+function questionsFor(step, text){
+  const out = [];
+  if (/\d/.test(text))                       out.push(['🔢','이 숫자는 무엇과 비교한 값인가요?']);
+  if (/것 같|듯|보인다|아마|같다|처럼/.test(text)) out.push(['🧐','이건 추측인가요? 무엇을 보면 확인되나요?']);
+  if (/때문|해서|므로|니까/.test(text))       out.push(['🔗','이 인과를 뒤집을 수 있는 설명은 없나요?']);
+  return out.concat(BANK[step] || BANK.s2).slice(0,5);
+}
+
+function openTp(rect, text, step){
+  tpSel.innerHTML = '“<b>' + text.replace(/[<>&]/g,'') + '</b>”';
+  tpQs.innerHTML = '';
+  questionsFor(step, text).forEach(([e,q]) => {
+    const b = document.createElement('button');
+    b.className = 'q';
+    b.innerHTML = '<span class="emo">'+e+'</span><span>'+q+'</span>';
+    b.addEventListener('click', () => addThought(e, q, step));
+    tpQs.appendChild(b);
+  });
+  const w = 352, pad = 16;
+  let left = rect.left + window.scrollX;
+  left = Math.min(left, window.innerWidth - w - pad);
+  left = Math.max(pad, left);
+  tp.style.left = left + 'px';
+  tp.style.top  = (rect.bottom + window.scrollY + 12) + 'px';
+  tp.setAttribute('data-open','');
+}
+function closeTp(){ tp.removeAttribute('data-open'); range = null; }
+
+document.addEventListener('mouseup', e => {
+  if (e.target.closest('.tp')) return;
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) { if(!e.target.closest('.tp')) closeTp(); return; }
+  const r = sel.getRangeAt(0);
+  const ed = r.commonAncestorContainer.parentElement?.closest('.editor');
+  if (!ed) { closeTp(); return; }
+  const txt = sel.toString().trim();
+  if (txt.length < 2) { closeTp(); return; }
+  range = r.cloneRange(); hostStep = ed.dataset.step || 's2';
+  openTp(r.getBoundingClientRect(), txt, hostStep);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTp(); });
+document.getElementById('tpClose').addEventListener('click', closeTp);
+document.getElementById('tpSave').addEventListener('click', () => {
+  const b = document.getElementById('tpSave');
+  b.textContent = '✅ 저장소에 담았습니다';
+  setTimeout(() => { b.textContent = '❓ 질문 저장소에 담기'; }, 1600);
+});
+
+function wrapSelection(kind){
+  if (!range) return null;
+  const span = document.createElement('span');
+  span.className = 'hl';
+  if (kind) span.dataset.kind = kind;
+  try { range.surroundContents(span); } catch(_) { return null; }
+  return span;
+}
+
+document.querySelectorAll('#tpTags .tagbtn').forEach(b => b.addEventListener('click', () => {
+  wrapSelection(b.dataset.kind);
+  closeTp(); window.getSelection().removeAllRanges();
+}));
+
+let pinNo = 2;
+function addThought(emo, q, step){
+  const span = wrapSelection(null);
+  const quote = span ? span.textContent : '';
+  if (span){
+    pinNo++;
+    const pin = document.createElement('span');
+    pin.className='pin'; pin.textContent=pinNo; span.appendChild(pin);
+  }
+  let thread = document.getElementById('thread-' + step);
+  if (!thread){
+    const ed = document.querySelector('.editor[data-step="'+step+'"]');
+    thread = document.createElement('div');
+    thread.className = 'thread'; thread.id = 'thread-' + step;
+    ed.parentElement.appendChild(thread);
+  }
+  const card = document.createElement('div');
+  card.className = 'thought';
+  card.innerHTML =
+    '<div class="qz"><span class="emo">'+emo+'</span> '+q+'</div>' +
+    '<div class="az" contenteditable="true"></div>' +
+    '<div class="meta"><span class="tag t-plain">방금 추가</span><span class="tiny">“'+
+      quote.slice(0,26)+(quote.length>26?'…':'')+'” 에 붙임</span></div>';
+  thread.appendChild(card);
+  const az = card.querySelector('.az');
+  az.style.minHeight = '28px'; az.style.outline = 'none';
+  closeTp(); window.getSelection().removeAllRanges();
+  az.focus();
+  card.scrollIntoView({block:'nearest', behavior:'smooth'});
+}
+
+show('s4');
+
+/* ---------- (요청7) 좌·우 패널 접기/펴기 + (요청6) 구분선 리사이즈 ---------- */
+const appEl = document.querySelector('.app');
+const tglL = document.getElementById('tglL'), tglR = document.getElementById('tglR');
+tglL.addEventListener('click', () => { const h = appEl.classList.toggle('hide-l'); tglL.textContent = h ? '+' : '−'; });
+tglR.addEventListener('click', () => { const h = appEl.classList.toggle('hide-r'); tglR.textContent = h ? '+' : '−'; });
+function bindResizer(handle, side){
+  if (!handle) return;
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault(); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+    function mv(ev){
+      if (side === 'l'){ const w = Math.min(440, Math.max(170, ev.clientX)); appEl.style.setProperty('--cw-l', w + 'px'); }
+      else { const w = Math.min(480, Math.max(200, window.innerWidth - ev.clientX)); appEl.style.setProperty('--cw-r', w + 'px'); }
+    }
+    function up(){ document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; document.body.style.userSelect = ''; }
+    document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+  });
+}
+bindResizer(document.getElementById('rzL'), 'l');
+bindResizer(document.getElementById('rzR'), 'r');
+
+/* ---------- (8) 도식 연습장 ---------- */
+(function(){
+  const canvas = document.getElementById('drawCanvas');
+  const svg = document.getElementById('drawSvg');
+  if(!canvas) return;
+  let tool = 'rect', arrowFrom = null, seq = 0;
+  const edges = [];
+
+  document.querySelectorAll('.draw-tools button[data-tool]').forEach(b => {
+    b.addEventListener('click', () => {
+      tool = b.dataset.tool;
+      document.querySelectorAll('.draw-tools button[data-tool]').forEach(x => x.classList.toggle('on', x === b));
+      if (arrowFrom){ arrowFrom.classList.remove('sel'); arrowFrom = null; }
+    });
+  });
+  document.getElementById('drawClear').addEventListener('click', () => {
+    canvas.querySelectorAll('.dnode').forEach(n => n.remove());
+    edges.length = 0; arrowFrom = null; redraw();
+  });
+
+  function makeNode(x, y, kind, label){
+    const n = document.createElement('div');
+    n.className = 'dnode' + (kind === 'diamond' ? ' dia' : kind === 'text' ? ' txt' : '');
+    n.textContent = label || (kind === 'text' ? '텍스트' : kind === 'diamond' ? '분기' : '항목');
+    n.style.left = Math.max(0, x) + 'px'; n.style.top = Math.max(0, y) + 'px';
+    n.dataset.id = 'n' + (++seq);
+    canvas.appendChild(n); bindNode(n); return n;
+  }
+  function bindNode(n){
+    n.addEventListener('mousedown', e => {
+      if (tool === 'arrow' || n.isContentEditable) return;
+      e.preventDefault();
+      const ox = e.clientX - n.offsetLeft, oy = e.clientY - n.offsetTop;
+      function mv(ev){ n.style.left = Math.max(0, ev.clientX - ox) + 'px'; n.style.top = Math.max(0, ev.clientY - oy) + 'px'; redraw(); }
+      function up(){ document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); }
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+    });
+    n.addEventListener('click', e => {
+      if (tool !== 'arrow') return;
+      e.stopPropagation();
+      if (!arrowFrom){ arrowFrom = n; n.classList.add('sel'); }
+      else if (arrowFrom === n){ n.classList.remove('sel'); arrowFrom = null; }
+      else { edges.push({ from: arrowFrom, to: n }); arrowFrom.classList.remove('sel'); arrowFrom = null; redraw(); }
+    });
+    n.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      n.setAttribute('contenteditable', 'true'); n.focus();
+      const r = document.createRange(); r.selectNodeContents(n);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    });
+    n.addEventListener('blur', () => n.setAttribute('contenteditable', 'false'));
+    n.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); n.blur(); } });
+  }
+  canvas.addEventListener('click', e => {
+    if (e.target !== canvas && e.target !== svg) return;
+    if (tool === 'move' || tool === 'arrow'){ if (arrowFrom){ arrowFrom.classList.remove('sel'); arrowFrom = null; } return; }
+    const r = canvas.getBoundingClientRect();
+    makeNode(e.clientX - r.left - 26, e.clientY - r.top - 15, tool);
+  });
+  function cen(n){ return { x: n.offsetLeft + n.offsetWidth / 2, y: n.offsetTop + n.offsetHeight / 2 }; }
+  function redraw(){
+    svg.querySelectorAll('line').forEach(l => l.remove());
+    edges.forEach(ed => {
+      if (!ed.from.isConnected || !ed.to.isConnected) return;
+      const a = cen(ed.from), b = cen(ed.to);
+      const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      ln.setAttribute('x1', a.x); ln.setAttribute('y1', a.y);
+      ln.setAttribute('x2', b.x); ln.setAttribute('y2', b.y);
+      ln.setAttribute('stroke', 'currentColor'); ln.setAttribute('stroke-width', '1.5');
+      ln.setAttribute('marker-end', 'url(#ah)');
+      svg.appendChild(ln);
+    });
+  }
+  // 예시 도형 두 개
+  const n1 = makeNode(28, 26, 'rect', '문제 영역');
+  const n2 = makeNode(28, 118, 'diamond', '기준으로 분기');
+  edges.push({ from: n1, to: n2 });
+  requestAnimationFrame(redraw);
+})();
+</script>
+</body>
+</html>

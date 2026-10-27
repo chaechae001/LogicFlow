@@ -240,3 +240,6 @@ pnpm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Keep third-party reference captures local; publish only our analysis.
+/design/redesign/reference_site/PROGRAMMERS/
