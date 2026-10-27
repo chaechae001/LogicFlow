@@ -1,41 +1,40 @@
 # LogicFlow
 
-사용자가 먼저 생각을 작성하고, 문제 정의·가설·검증·판단 과정을 보존하며 논리적 사고를 훈련하는 웹 서비스입니다. 기존 코드와 문서에는 개발명 **Thinking Flow**가 남아 있습니다.
+**답을 받기 전에, 자신의 생각을 구조화하고 판단의 근거를 남기는 논리적 사고 훈련 서비스입니다.**
 
-## 현재 구현
+AI를 활용하면서도 스스로 문제를 정의하고 가설을 세우는 힘을 기르고 싶은 취업준비생·직무 전환자를 대상으로 설계했습니다. 기존 소스와 일부 시안에는 개발명 Thinking Flow가 남아 있습니다.
 
-- Practice Library와 가상 올리브영 O2O Case 시작.
-- 10단계 Workspace shell, 단계 이동과 Soft Gate.
-- V2 `context` 단계의 자유 작성·구조화 입력, 명시적 초안 저장·복원, 버전 보존.
-- localStorage Repository와 스키마 검증·손상 데이터 복구 경로.
-- 퍼널·네이밍·IA·디자인 시스템·HTML 시안을 `design/`에 보존.
+## 문제와 핵심 원칙
 
-**10단계 전체 입력·자동 저장·실제 LLM·리포트/포트폴리오 생성이 모두 완료된 상태는 아닙니다.** 대표 Case는 공개 정보와 가정으로 만든 연습용이며 실제 올리브영 성과가 아닙니다.
+완성된 답을 빠르게 얻는 경험만으로는 어떤 근거로 판단했는지 돌아보기 어렵습니다. LogicFlow는 **사용자 선작성 → 사고 구조화 → 근거 점검 → 판단 기록**을 중심으로 설계했습니다.
 
-기술: Next.js 16, React 19, TypeScript strict, Tailwind CSS 4, Zod, Vitest, Testing Library.
+- 사실·해석·가설을 구분합니다.
+- 자유 작성과 구조화 입력을 오가도 생각을 보존합니다.
+- 응답을 덮어쓰는 대신 버전으로 남깁니다.
+- AI는 사용자가 먼저 작성한 뒤 보조하는 역할을 갖습니다.
 
-## 실행·검증
+## 대표 사용자 경험
 
-```powershell
-npm ci
-npm run dev
+```mermaid
+flowchart LR
+    A[연습 Case 선택] --> B[목적·맥락 작성]
+    B --> C[자유 작성·구조화 입력]
+    C --> D[초안과 버전 보존]
+    D --> E[사고 단계 탐색]
 ```
 
-http://localhost:3000 → Practice Case 선택 → Workspace `context` → 두 입력 방식 작성 → 명시적 저장 → 새로고침 복원을 확인합니다. 현재 기본 저장은 해당 브라우저의 localStorage이며 계정·서버 동기화는 없습니다.
+가상 올리브영 O2O Case를 통해 목적과 맥락을 작성하고, 두 입력 방식의 내용을 저장·복원하는 프로토타입입니다. 10단계 탐색 구조와 입력 이력을 분리해 화면 이동이 생각의 유실로 이어지지 않도록 구성했습니다.
 
-```powershell
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
+## 기술적 접근
 
-## 이어서 작업하기
+Next.js · React · TypeScript strict · Tailwind CSS · Zod · Repository 패턴 · localStorage
 
-- [현재 진행 현황](docs/PROJECT_STATUS.md)
-- [최신 인수인계](docs/HANDOFF.md)
-- [검증 결과](docs/VERIFICATION.md)
-- [V2 로드맵](docs/v2/10_V2_DEVELOPMENT_ROADMAP.md)
-- [퍼널 설계](design/funnel/README.md), [리디자인 제안](design/redesign/README.md)
+도메인과 UI를 분리하고 Repository로 저장 동작을 추상화했습니다. 스키마 버전과 응답 이력을 구분하여 데이터의 유효성과 작성 과정을 다룹니다.
 
-`docs/IMPLEMENTATION_COMPLETION_REPORT.md`, `docs/codex_handoff/`는 이전 기준선의 보관 자료입니다. 리디자인 시안은 현재 앱에 모두 적용된 구현이 아닙니다.
+## 서비스·UX 설계 산출물
+
+- [퍼널·화면 설계](design/README.md)
+- [퍼널 설계 이미지](design/funnel-map.png)
+- [리디자인 시안 허브](design/redesign/mockups/index.html)
+
+시안은 제품의 정보 구조와 시각적 접근을 보여주는 설계 산출물입니다. 앱에 모두 적용된 기능으로 간주하지 않습니다. 대표 Case는 공개 정보와 가정으로 만든 연습 사례이며 실제 올리브영의 내부 데이터나 성과가 아닙니다.
