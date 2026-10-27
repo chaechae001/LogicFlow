@@ -1,7 +1,5 @@
 # LogicFlow
 
-소개하는 프로토타입의 [소스와 산출물](https://github.com/chaechae001/LogicFlow/tree/chore/portfolio-handoff-20261027).
-
 **답을 받기 전에, 자신의 생각을 구조화하고 판단의 근거를 남기는 논리적 사고 훈련 서비스입니다.**
 
 AI를 활용하면서도 스스로 문제를 정의하고 가설을 세우는 힘을 기르고 싶은 취업준비생·직무 전환자를 대상으로 설계했습니다. 기존 소스와 일부 시안에는 개발명 Thinking Flow가 남아 있습니다.
@@ -35,8 +33,8 @@ Next.js · React · TypeScript strict · Tailwind CSS · Zod · Repository 패�
 
 ## 서비스·UX 설계 산출물
 
-- [퍼널·화면 설계](https://github.com/chaechae001/LogicFlow/blob/chore/portfolio-handoff-20261027/design/README.md)
-- [퍼널 설계 이미지](https://github.com/chaechae001/LogicFlow/blob/chore/portfolio-handoff-20261027/design/funnel-map.png)
-- [리디자인 시안 허브](https://github.com/chaechae001/LogicFlow/blob/chore/portfolio-handoff-20261027/design/redesign/mockups/index.html)
+- [퍼널·화면 설계](design/README.md)
+- [퍼널 설계 이미지](design/funnel-map.png)
+- [리디자인 시안 허브](design/redesign/mockups/index.html)
 
 시안은 제품의 정보 구조와 시각적 접근을 보여주는 설계 산출물입니다. 앱에 모두 적용된 기능으로 간주하지 않습니다. 대표 Case는 공개 정보와 가정으로 만든 연습 사례이며 실제 올리브영의 내부 데이터나 성과가 아닙니다.

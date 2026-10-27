@@ -1,5 +1,5 @@
-import { LocalStorageRepository } from "./local-storage/local-storage-repository";
+import { V2LocalStorageRepository } from "./v2/v2-local-storage-repository";
 
-export function createBrowserThinkingCaseRepository(): LocalStorageRepository {
-  return new LocalStorageRepository();
+export function createBrowserThinkingCaseRepository(): V2LocalStorageRepository {
+  return new V2LocalStorageRepository();
 }

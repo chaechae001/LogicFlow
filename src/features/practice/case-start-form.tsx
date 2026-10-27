@@ -62,7 +62,7 @@ export function CaseStartForm({ practiceCase }: CaseStartFormProps) {
       await repository.resetLocalData();
       setSubmissionError(null);
       setResetMessage(
-        "기존 로컬 데이터를 초기화했습니다. 이제 이 문제로 다시 시작할 수 있습니다.",
+        "Thinking Flow V2 로컬 데이터를 초기화했습니다. 이제 이 문제로 다시 시작할 수 있습니다.",
       );
     } catch (error) {
       const errorMessage = getCaseStartErrorMessage(error);
@@ -98,8 +98,8 @@ export function CaseStartForm({ practiceCase }: CaseStartFormProps) {
           {submissionError.canResetLocalData ? (
             <div className="mt-4 border-t border-[#e5b8b1] pt-4">
               <p className="text-xs leading-5">
-                초기화하면 이 브라우저에 저장된 기존 Thinking Flow 데이터가
-                삭제됩니다. 자동 변환이나 자동 삭제는 수행하지 않습니다.
+                초기화하면 이 브라우저의 Thinking Flow V2 데이터만 삭제됩니다.
+                V1 데이터는 유지되며 자동 변환이나 자동 삭제는 수행하지 않습니다.
               </p>
               <button
                 className="mt-3 rounded-full border border-[#9b3e34] px-4 py-2 text-xs font-bold hover:bg-[#9b3e34] hover:text-white disabled:cursor-wait disabled:opacity-60"
@@ -109,7 +109,7 @@ export function CaseStartForm({ practiceCase }: CaseStartFormProps) {
               >
                 {isResetting
                   ? "로컬 데이터를 초기화하는 중..."
-                  : "기존 로컬 데이터 초기화"}
+                  : "V2 로컬 데이터 초기화"}
               </button>
             </div>
           ) : null}
@@ -134,7 +134,7 @@ export function CaseStartForm({ practiceCase }: CaseStartFormProps) {
           {isSubmitting ? "Case를 만드는 중..." : "이 문제로 시작하기"}
         </button>
         <p className="mt-4 text-xs leading-5 text-[var(--muted)]">
-          새 Case는 이 브라우저의 schemaVersion 2 저장소에 보관됩니다.
+          새 Case는 V1과 분리된 schemaVersion 3 저장소에 보관됩니다.
         </p>
       </div>
     </form>

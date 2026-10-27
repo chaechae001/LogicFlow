@@ -1,8 +1,8 @@
 import {
   THINKING_STAGES,
-  type CaseStep,
   type CaseStepStatus,
   type ThinkingStage,
+  type V2CaseStep,
 } from "../../domain";
 
 export interface WorkspaceStageDefinition {
@@ -101,14 +101,14 @@ export function getWorkspaceStage(
 }
 
 export function getStageStep(
-  steps: CaseStep[],
+  steps: V2CaseStep[],
   stage: ThinkingStage,
-): CaseStep | undefined {
+): V2CaseStep | undefined {
   return steps.find((step) => step.stage === stage);
 }
 
 export function getSoftGateNotice(
-  steps: CaseStep[],
+  steps: V2CaseStep[],
   currentStage: ThinkingStage,
   targetStage: ThinkingStage,
 ): SoftGateNotice | null {

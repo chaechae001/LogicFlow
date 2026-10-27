@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thinking Flow — 퍼널 설계도</title>
+<style>
+  :root{
+    --bg:#faf9f7; --surface:#fff; --line:#e4e0d9; --ink:#1c1a17; --muted:#6b665e;
+    --accent:#2f6f5e; --accent-soft:#e8f1ee;
+    --hot:#c0392b; --warn:#c77b2b; --mid:#b8a02e; --ok:#3f8f5c;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#15140f; --surface:#1e1c18; --line:#332f28; --ink:#f0ece4; --muted:#9b9488;
+           --accent:#6fbfa5; --accent-soft:#1d302b; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Segoe UI","Malgun Gothic",sans-serif;
+       line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:56px 24px 96px}
+  header{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:44px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  h1{font-size:clamp(28px,4.5vw,42px);margin:10px 0 8px;letter-spacing:-.02em;line-height:1.2}
+  .sub{color:var(--muted);font-size:15px;margin:0}
+  h2{font-size:20px;margin:56px 0 18px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  h2::before{content:"";width:4px;height:20px;background:var(--accent);border-radius:2px}
+  h3{font-size:15px;margin:32px 0 12px;color:var(--muted);font-weight:700;letter-spacing:.02em}
+
+  /* funnel */
+  .funnel{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;align-items:stretch;gap:12px}
+  .stage{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+         padding:14px 18px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:flex-start;
+         transition:transform .15s ease,border-color .15s ease}
+  .stage:hover{transform:translateX(3px);border-color:var(--accent)}
+  .num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+       font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:3px}
+  .body{min-width:0;flex:1}
+  .name{font-weight:700;font-size:15px}
+  .name small{font-weight:500;color:var(--muted);font-size:12px;margin-left:6px;letter-spacing:.04em}
+  .desc{font-size:13.5px;color:var(--muted);margin-top:2px}
+  .kpi{font-size:12px;color:var(--accent);margin-top:6px;font-weight:600}
+  .arrow{text-align:center;color:var(--line);font-size:13px;line-height:1;margin:-2px 0}
+
+  .aha{border:2px solid var(--accent);background:linear-gradient(180deg,var(--accent-soft),var(--surface))}
+  .aha .num{background:var(--accent);color:var(--bg)}
+  .badge{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.08em;
+         background:var(--accent);color:var(--bg);padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:2px}
+
+  .leak{flex:none;width:200px;border:1px dashed var(--line);border-radius:12px;padding:12px 14px;
+        font-size:12px;color:var(--muted);background:transparent;display:flex;align-items:center}
+  .leak b{display:block;color:var(--hot);font-size:11px;letter-spacing:.06em;margin-bottom:3px}
+
+  /* micro funnel */
+  .steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+  .step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+        border-left:4px solid var(--line);box-shadow:var(--shadow)}
+  .step.r{border-left-color:var(--hot)} .step.o{border-left-color:var(--warn)}
+  .step.y{border-left-color:var(--mid)} .step.g{border-left-color:var(--ok)}
+  .step .n{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.08em}
+  .step .t{font-weight:700;font-size:14px;margin-top:2px}
+  .step .k{font-size:11.5px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:1px}
+  .step .r2{font-size:12px;color:var(--muted);margin-top:7px}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--muted);margin:14px 0 4px}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%}
+
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow)}
+  .card h4{margin:0 0 8px;font-size:15px;letter-spacing:-.01em}
+  .card p{margin:0;font-size:13.5px;color:var(--muted)}
+  .card .tag{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .note{font-size:12.5px;color:var(--muted);border-left:3px solid var(--line);padding:2px 0 2px 14px;margin:16px 0}
+  footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  @media(max-width:720px){ .row{flex-direction:column} .leak{width:auto} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Funnel Blueprint</div>
+  <h1>Thinking Flow 퍼널 설계도</h1>
+  <p class="sub">AI가 대신 생각하지 않는 사고 훈련 서비스 · 2026-08-03 기준 · 원본 문서 <code>docs/</code> · <code>docs/v2/</code> 참조</p>
+</header>
+
+<h2>Macro Funnel — 인지에서 확산까지</h2>
+
+<div class="funnel">
+
+  <div class="row">
+    <div class="stage"><div class="num">1</div><div class="body">
+      <div class="name">인지 <small>AWARENESS</small></div>
+      <div class="desc">커뮤니티 · 사고법 콘텐츠 SEO · <b>기존 사용자의 포트폴리오 공유 링크</b></div>
+      <div class="kpi">채널별 유입 · 공유 링크 경유 비중</div>
+    </div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage"><div class="num">2</div><div class="body">
+      <div class="name">방문 <small>LANDING</small></div>
+      <div class="desc">3초 안에 “AI가 답을 주는 서비스가 아니다”를 이해시킨다 · 사용 전/후 대조표를 히어로 직하단에</div>
+      <div class="kpi">Landing → Library 이동률</div>
+    </div></div>
+    <div class="leak"><div><b>이탈 원인</b>“또 하나의 AI 글쓰기 툴”로 오인</div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage"><div class="num">3</div><div class="body">
+      <div class="name">탐색 <small>PRACTICE LIBRARY</small></div>
+      <div class="desc">유형 · 난이도 · 직무 · 예상 시간 필터 / 첫 방문자에겐 입문·일상 유형 우선 노출</div>
+      <div class="kpi">필터 사용률 · Case Detail 진입률</div>
+    </div></div>
+    <div class="leak"><div><b>이탈 원인</b>선택지 과다 · 내 직무와 연결 실패</div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage"><div class="num">4</div><div class="body">
+      <div class="name">선택 <small>CASE DETAIL</small></div>
+      <div class="desc">문제 상황 · 업무 요청 · 알려진 전제(사실/가상/가정 배지) · 검증 필요 정보 · 예상 산출물</div>
+      <div class="kpi">Detail → 시작 전환율</div>
+    </div></div>
+    <div class="leak"><div><b>이탈 원인</b>“정답이 없다”는 불안 · 시간 부담</div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage"><div class="num">5</div><div class="body">
+      <div class="name">진입 <small>CASE 생성</small></div>
+      <div class="desc">사전 답안 양식 없음 · 로그인 게이트 없음 → 곧바로 <code>/workspace/context</code></div>
+      <div class="kpi">Case 시작률 (F1)</div>
+    </div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage aha"><div class="num">6</div><div class="body">
+      <div class="name">활성화 <small>ACTIVATION</small><span class="badge">AHA MOMENT</span></div>
+      <div class="desc"><b>Stage 1 <code>context</code>에서 내 초안을 저장하고, 새로고침해도 그대로 복원되는 것을 확인한 순간.</b>
+      “빈 화면에서 시작할 수 있다 / 내 문장이 사라지지 않는다 / AI가 대신 쓰지 않는다”가 동시에 증명된다.</div>
+      <div class="kpi">★ North Star 후보 — 첫 Case에서 context 초안을 작성한 사용자 비율</div>
+    </div></div>
+    <div class="leak"><div><b>최대 리스크</b>빈 화면 공포 — “뭘 써야 하지”에서 창을 닫는다</div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage"><div class="num">7</div><div class="body">
+      <div class="name">핵심 루프 <small>10단계 WORKSPACE</small></div>
+      <div class="desc">작성 → 저장 → AI 점검 요청 → 채택·거절 → 수정(version append) → 다음 단계 · Soft Gate는 차단이 아니라 안내</div>
+      <div class="kpi">단계별 완료율 · AI 점검 요청률 · 피드백 채택 vs 거절률</div>
+    </div></div>
+    <div class="leak"><div><b>이탈 원인</b>단계 피로 · Stage 6 인지 부하 최대</div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage"><div class="num">8</div><div class="body">
+      <div class="name">완주 <small>CASE SUMMARY</small></div>
+      <div class="desc">10단계 산출물 · 미완료 항목 · 불확실성 검토 (내부 학습 산출물) · <b>하단에 다음 행동 3-CTA 필수</b></div>
+      <div class="kpi">전체 Case 완료율 (F4) · Summary 열람률 (F5)</div>
+    </div></div>
+    <div class="leak"><div><b>이탈 원인</b>완료 후 다음 행동 부재 → 세션 종료</div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage"><div class="num">9</div><div class="body">
+      <div class="name">재방문 <small>RETENTION</small></div>
+      <div class="desc">두 번째 Case + Thinking Analysis · “2번째 Case를 완료하면 비교 분석이 열립니다”를 명시적 동기로</div>
+      <div class="kpi">두 번째 Case 시작률 — 학습 서비스의 생존 지표</div>
+    </div></div>
+    <div class="leak"><div><b>이탈 원인</b>1회성 체험으로 성취 소진</div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage"><div class="num">10</div><div class="body">
+      <div class="name">전환 <small>PORTFOLIO BUILDER</small></div>
+      <div class="desc">Case별 포트폴리오 → 역량 포트폴리오 → 직무별 변환 → 기술 블로그 → 면접 답변 · 모든 섹션이 원본으로 역추적</div>
+      <div class="kpi">Portfolio 생성률 (F6) · 원본 재검토율 · 지불 의사 발생 후보 지점</div>
+    </div></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="row">
+    <div class="stage"><div class="num">11</div><div class="body">
+      <div class="name">확산 <small>EXPORT &amp; SHARE</small></div>
+      <div class="desc">기본 비공개 · 섹션별 공개 범위 확인 · 공유 철회 · 공개 포트폴리오 하단 출처 블록 → <b>①로 재유입</b></div>
+      <div class="kpi">Export 실행률 · 공유 링크 경유 신규 유입</div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="note">현재 퍼널은 <b>⑤ → ⑥ 구간이 끊겨 있다.</b> Workspace Shell만 존재하고 실제 입력·저장이 미구현이므로,
+유입을 늘리는 어떤 활동도 지금은 의미가 없다. <b>V2-02 / V2-03(Context 입력·저장·복원)이 사실상 첫 번째 퍼널 복구 작업</b>이다.</div>
+
+<h2>Micro Funnel — 10단계 Workspace 내부 이탈 위험도</h2>
+
+<div class="legend">
+  <span><i class="dot" style="background:var(--hot)"></i>최고 위험</span>
+  <span><i class="dot" style="background:var(--warn)"></i>높음</span>
+  <span><i class="dot" style="background:var(--mid)"></i>중간</span>
+  <span><i class="dot" style="background:var(--ok)"></i>낮음</span>
+</div>
+
+<div class="steps">
+  <div class="step r"><div class="n">STAGE 1</div><div class="t">목적·맥락 이해</div><div class="k">context</div><div class="r2">Activation 지점 · 첫 초안 저장</div></div>
+  <div class="step o"><div class="n">STAGE 2</div><div class="t">현상 관찰</div><div class="k">observation</div><div class="r2">사실·해석 분리 첫 훈련</div></div>
+  <div class="step y"><div class="n">STAGE 3</div><div class="t">문제 정의</div><div class="k">problem_definition</div><div class="r2">첫 “성장 체감” 지점</div></div>
+  <div class="step o"><div class="n">STAGE 4</div><div class="t">문제 분해·구조화</div><div class="k">problem_structuring</div><div class="r2">프레임워크 첫 적용</div></div>
+  <div class="step y"><div class="n">STAGE 5</div><div class="t">가설 설정</div><div class="k">hypothesis</div><div class="r2">복수 가설 작성</div></div>
+  <div class="step r"><div class="n">STAGE 6</div><div class="t">근거 수집·검증</div><div class="k">evidence_validation</div><div class="r2">인지 부하 최대 구간</div></div>
+  <div class="step y"><div class="n">STAGE 7</div><div class="t">대안 비교·의사결정</div><div class="k">decision</div><div class="r2">기준·가중치 결정</div></div>
+  <div class="step g"><div class="n">STAGE 8</div><div class="t">해결안 설계·실행</div><div class="k">solution_execution</div><div class="r2">산출물 체감 회복</div></div>
+  <div class="step g"><div class="n">STAGE 9</div><div class="t">결과 평가</div><div class="k">result_evaluation</div><div class="r2">완주 임박</div></div>
+  <div class="step g"><div class="n">STAGE 10</div><div class="t">결론 전달·회고</div><div class="k">conclusion_reflection</div><div class="r2">완결 + 포트폴리오 진입</div></div>
+</div>
+
+<h2>퍼널 누수 우선순위</h2>
+<div class="scroll">
+<table>
+  <thead><tr><th>순위</th><th>구간</th><th>문제</th><th>개선 레버</th><th>왜 이 순서인가</th></tr></thead>
+  <tbody>
+    <tr><td><b>1</b></td><td>⑥ Activation</td><td>빈 화면 이탈</td><td>짧은 자유 작성 우선 → 구조화 질문으로 보완 · 예시는 보여주되 입력값에 삽입 금지</td><td>여기가 막히면 이후 전 단계가 0</td></tr>
+    <tr><td><b>2</b></td><td>⑦ Stage 6</td><td>인지 부하로 중도 이탈</td><td>잔여 단계 명시 · 근거 부족은 “불확실”로 표시하고 통과 허용</td><td>이미 절반 투자한 사용자 = 회수 효율 최대</td></tr>
+    <tr><td><b>3</b></td><td>⑨ Retention</td><td>1회성 사용</td><td>Summary 하단 3-CTA · 2번째 Case에서 분석 해금</td><td>학습 서비스의 생존 지표</td></tr>
+    <tr><td><b>4</b></td><td>③ Library</td><td>자기 문제와 연결 실패</td><td>입문·일상 유형 우선 노출 · “처음이라면 이것부터” 단일 슬롯</td><td>유입은 있으나 선택에서 실패</td></tr>
+    <tr><td><b>5</b></td><td>⑪ Referral</td><td>확산 채널 부재</td><td>포트폴리오 출처 블록 (기본 on, 사용자가 끌 수 있음)</td><td>유일한 자연 유입 채널</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>USP — 다섯 개의 차별점</h2>
+<div class="cards">
+  <div class="card"><div class="tag">01</div><h4>AI가 답을 먼저 주지 않는다</h4>
+    <p>사용자가 쓰기 전에는 AI Coach가 <code>locked</code>. AI는 완성 답안이 아니라 누락·혼재·논리 공백·반례만 제시한다. 기술이 아니라 <b>지키기 어려운 원칙</b>이라 모방이 어렵다.</p></div>
+  <div class="card"><div class="tag">02</div><h4>틀린 생각이 지워지지 않는다</h4>
+    <p>append-only 버전 이력. 최초 초안, 수정 전후, 자유 작성과 구조화 입력 양쪽, AI 피드백을 <b>거절한 기록까지</b> 판단 데이터로 남는다.</p></div>
+  <div class="card"><div class="tag">03</div><h4>포트폴리오가 원본으로 역추적된다</h4>
+    <p>모든 파생 섹션이 원본 Stage·버전으로 되돌아간다. 원본에 없는 성과·역할·수치를 생성하지 않는다. <b>역추적 가능성이 새로운 신뢰 기준</b>이 된다.</p></div>
+  <div class="card"><div class="tag">04</div><h4>성장이 감이 아니라 데이터로 보인다</h4>
+    <p>모든 metric은 계산식과 원본으로 설명 가능해야 한다. 근거 없는 역량 점수와 사용자 간 순위는 만들지 않는다.</p></div>
+  <div class="card"><div class="tag">05</div><h4>반복할수록 도움을 줄인다</h4>
+    <p>목표는 오래 붙잡아두는 것이 아니라 <b>가이드 없이도 같은 사고 흐름을 수행하게</b> 만드는 것. 리텐션에는 불리하지만 학습 서비스에선 가장 강한 신뢰 자산이다.</p></div>
+</div>
+
+<h2>타겟 — 세 조건이 동시에 성립하는 집단</h2>
+<div class="cards">
+  <div class="card"><div class="tag">1차 타겟</div><h4>취업준비생 · 직무 전환자</h4>
+    <p>AI를 자주 쓰지만 자기 사고력을 키워 포트폴리오로 증명하고 싶은 사람. <b>① 문제를 이미 느끼고 있고 ② 날짜가 정해진 마감이 있으며 ③ 시간을 투자할 절박함이 있다.</b> 특히 ②가 결정적 — 마찰이 큰 제품이라 “당장 필요한 이유”가 없으면 완주하지 않는다.</p></div>
+  <div class="card"><div class="tag">페르소나 A</div><h4>과정을 설명 못 하는 취준생</h4>
+    <p>포트폴리오에 프로젝트는 있지만 면접에서 “왜 그 지표를 골랐나요?”에 막힌다. 필요한 건 결과물 개선이 아니라 <b>판단 근거를 말할 수 있는 상태</b>.</p></div>
+  <div class="card"><div class="tag">페르소나 B</div><h4>빈 화면 앞에서 멈추는 전환자</h4>
+    <p>MECE·5Why 강의는 들었지만 실제 문제에 적용하지 못한다. 필요한 건 정답이 아니라 <b>시작할 수 있는 절차와 안전한 연습 문제</b>.</p></div>
+  <div class="card"><div class="tag">확장 후보</div><h4>면접 Case 준비자 → 실무 초년생 → 교육 기관</h4>
+    <p>면접 Case 준비자는 1차 타겟과 거의 겹쳐 진입 비용이 가장 낮다. 실무 초년생은 마감 동기가 약해 완주율 리스크가 있고, 부트캠프·대학은 B2E 전환으로 별도 검수 체계가 필요하다.</p></div>
+  <div class="card"><div class="tag">제외</div><h4>지금은 타겟이 아닌 사용자</h4>
+    <p>빠른 산출물만 원하는 사용자(제품 원칙과 정면 충돌 · Activation에서 전원 이탈), 이미 사고 절차가 체화된 시니어, 기업 내부 데이터 사용자, 팀 협업 목적 사용자.</p></div>
+</div>
+
+<footer>
+  참고 원본 — <code>docs/01_PROJECT_CONTEXT.md</code> · <code>docs/02_PRODUCT_CORE.md</code> · <code>docs/03_LEAN_PRD.md</code> ·
+  <code>docs/v2/00_V2_MASTER_CONTEXT.md</code> · <code>01_V2_PRODUCT_VISION.md</code> · <code>04_V2_PRACTICE_CASE_SYSTEM.md</code> ·
+  <code>07_V2_PORTFOLIO_SYSTEM.md</code> · <code>08_V2_UX_ARCHITECTURE.md</code> · <code>10_V2_DEVELOPMENT_ROADMAP.md</code><br>
+  지표의 목표 수치는 설정하지 않았다. 실제 사용 데이터 확보 전까지 모든 수치는 가설이다.
+</footer>
+
+</div>
+</body>
+</html>
