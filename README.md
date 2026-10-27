@@ -1,76 +1,42 @@
 # LogicFlow
 
-사용자가 자신의 생각을 먼저 꺼내고, 문제 정의–구조화–가설–검증–의사결정–실행의 과정을 반복 훈련하도록 돕는 웹 기반 학습 서비스입니다. AI는 사용자의 첫 작성 이후에만 질문·반례·논리 공백 점검을 제공합니다.
+소개하는 프로토타입의 [소스와 산출물](https://github.com/chaechae001/LogicFlow/tree/chore/portfolio-handoff-20261027).
 
-현재 저장소는 `Task 00 — Repository Bootstrap`까지 구성되어 있습니다. 제품 기능과 도메인 모델은 후속 Task에서 문서 순서대로 구현합니다.
+**답을 받기 전에, 자신의 생각을 구조화하고 판단의 근거를 남기는 논리적 사고 훈련 서비스입니다.**
 
-## 기술 구성
+AI를 활용하면서도 스스로 문제를 정의하고 가설을 세우는 힘을 기르고 싶은 취업준비생·직무 전환자를 대상으로 설계했습니다. 기존 소스와 일부 시안에는 개발명 Thinking Flow가 남아 있습니다.
 
-- Next.js 16 App Router
-- React 19
-- TypeScript strict mode
-- Tailwind CSS 4
-- ESLint 9
-- Vitest 4
+## 문제와 핵심 원칙
 
-## 요구 환경
+완성된 답을 빠르게 얻는 경험만으로는 어떤 근거로 판단했는지 돌아보기 어렵습니다. LogicFlow는 **사용자 선작성 → 사고 구조화 → 근거 점검 → 판단 기록**을 중심으로 설계했습니다.
 
-- Node.js 20.9 이상
-- npm 11 권장
+- 사실·해석·가설을 구분합니다.
+- 자유 작성과 구조화 입력을 오가도 생각을 보존합니다.
+- 응답을 덮어쓰는 대신 버전으로 남깁니다.
+- AI는 사용자가 먼저 작성한 뒤 보조하는 역할을 갖습니다.
 
-## 로컬 실행
+## 대표 사용자 경험
 
-```bash
-npm install
-npm run dev
+```mermaid
+flowchart LR
+    A[연습 Case 선택] --> B[목적·맥락 작성]
+    B --> C[자유 작성·구조화 입력]
+    C --> D[초안과 버전 보존]
+    D --> E[사고 단계 탐색]
 ```
 
-브라우저에서 [http://localhost:3000](http://localhost:3000)을 엽니다.
+가상 올리브영 O2O Case를 통해 목적과 맥락을 작성하고, 두 입력 방식의 내용을 저장·복원하는 프로토타입입니다. 10단계 탐색 구조와 입력 이력을 분리해 화면 이동이 생각의 유실로 이어지지 않도록 구성했습니다.
 
-Windows PowerShell의 실행 정책 때문에 `npm.ps1` 실행이 차단된 경우 다음처럼 `npm.cmd`를 사용할 수 있습니다.
+## 기술적 접근
 
-```powershell
-npm.cmd install
-npm.cmd run dev
-```
+Next.js · React · TypeScript strict · Tailwind CSS · Zod · Repository 패턴 · localStorage
 
-## 개발용 로컬 데이터 초기화
+도메인과 UI를 분리하고 Repository로 저장 동작을 추상화했습니다. 스키마 버전과 응답 이력을 구분하여 데이터의 유효성과 작성 과정을 다룹니다.
 
-현재 localStorage는 `schemaVersion: 2`를 사용하며 기존 version 1 데이터를 자동 변환하지 않습니다. Case 시작 화면에서 version 불일치 또는 현재 구조와 맞지 않는 저장 데이터가 감지되면 데이터 삭제 안내와 함께 `기존 로컬 데이터 초기화` 버튼을 제공합니다. 사용자가 직접 누르기 전에는 기존 데이터를 변경하지 않습니다.
+## 서비스·UX 설계 산출물
 
-개발자 도구에서 직접 초기화해야 할 때는 Console에서 다음 명령을 실행한 뒤 페이지를 새로고침합니다.
+- [퍼널·화면 설계](https://github.com/chaechae001/LogicFlow/blob/chore/portfolio-handoff-20261027/design/README.md)
+- [퍼널 설계 이미지](https://github.com/chaechae001/LogicFlow/blob/chore/portfolio-handoff-20261027/design/funnel-map.png)
+- [리디자인 시안 허브](https://github.com/chaechae001/LogicFlow/blob/chore/portfolio-handoff-20261027/design/redesign/mockups/index.html)
 
-```js
-window.localStorage.removeItem("thinking-flow:repository");
-```
-
-코드에서는 `LocalStorageRepository.resetLocalData()`를 명시적으로 호출해 빈 version 2 문서로 초기화할 수 있습니다. 어느 방식도 자동으로 실행되지 않으며, 초기화 전 기존 데이터는 덮어쓰지 않습니다.
-
-## 품질 검사
-
-```bash
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
-
-## 기본 구조
-
-```text
-thinking-flow/
-├─ docs/                  # 제품·UX·데이터·Task 명세
-├─ public/                # 정적 파일
-├─ src/
-│  ├─ app/                # Next.js App Router
-│  ├─ components/         # 공용 UI 컴포넌트
-│  ├─ domain/             # 도메인 타입과 규칙 (Task 01부터)
-│  ├─ features/           # 기능 단위 모듈
-│  ├─ lib/                # 프레임워크 독립 유틸리티
-│  ├─ repositories/       # 저장소 인터페이스와 구현 (Task 02부터)
-│  └─ test/               # 공용 테스트 지원 코드
-├─ AGENTS.md              # 개발 원칙
-└─ package.json
-```
-
-구현 순서와 범위는 [`docs/10_CODEX_TASKS.md`](docs/10_CODEX_TASKS.md)를 따릅니다. 확인되지 않은 올리브영 내부 정보는 사실로 표현하지 않으며, 원본 참고자료와 환경변수는 커밋하지 않습니다.
+시안은 제품의 정보 구조와 시각적 접근을 보여주는 설계 산출물입니다. 앱에 모두 적용된 기능으로 간주하지 않습니다. 대표 Case는 공개 정보와 가정으로 만든 연습 사례이며 실제 올리브영의 내부 데이터나 성과가 아닙니다.
