@@ -29,9 +29,8 @@ vi.mock("../../repositories/browser-repository", () => ({
   createBrowserThinkingCaseRepository: () => ({
     createCase: mocks.createCase,
     getCase: vi.fn(),
-    listCases: vi.fn(),
     resetLocalData: mocks.resetLocalData,
-    saveResponseVersion: vi.fn(),
+    saveContextDraft: vi.fn(),
   }),
 }));
 
@@ -118,16 +117,18 @@ describe("CaseStartForm", () => {
     await user.click(screen.getByRole("button", { name: "이 문제로 시작하기" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("이전에 저장된 데이터가 현재 버전과 호환되지 않습니다.");
+    expect(alert).toHaveTextContent(
+      "이전에 저장된 V2 데이터가 현재 버전과 호환되지 않습니다.",
+    );
     expect(alert).not.toHaveTextContent("저장 공간");
 
     await user.click(
-      screen.getByRole("button", { name: "기존 로컬 데이터 초기화" }),
+      screen.getByRole("button", { name: "V2 로컬 데이터 초기화" }),
     );
 
     expect(mocks.resetLocalData).toHaveBeenCalledOnce();
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "기존 로컬 데이터를 초기화했습니다.",
+      "Thinking Flow V2 로컬 데이터를 초기화했습니다.",
     );
     expect(consoleErrorSpy).not.toHaveBeenCalled();
     expect(consoleWarnSpy).toHaveBeenCalledWith(
@@ -158,13 +159,13 @@ describe("CaseStartForm", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(
-      "이전에 저장된 데이터가 현재 구조와 호환되지 않습니다.",
+      "이전에 저장된 V2 데이터가 현재 구조와 호환되지 않습니다.",
     );
     expect(alert).toHaveTextContent(
-      "이 브라우저에 저장된 기존 Thinking Flow 데이터가 삭제됩니다.",
+      "이 브라우저의 Thinking Flow V2 데이터만 삭제됩니다.",
     );
     expect(
-      screen.getByRole("button", { name: "기존 로컬 데이터 초기화" }),
+      screen.getByRole("button", { name: "V2 로컬 데이터 초기화" }),
     ).toBeInTheDocument();
     expect(consoleErrorSpy).not.toHaveBeenCalled();
     expect(consoleWarnSpy).toHaveBeenCalledWith(
@@ -176,11 +177,11 @@ describe("CaseStartForm", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "기존 로컬 데이터 초기화" }),
+      screen.getByRole("button", { name: "V2 로컬 데이터 초기화" }),
     );
     expect(mocks.resetLocalData).toHaveBeenCalledOnce();
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "기존 로컬 데이터를 초기화했습니다.",
+      "Thinking Flow V2 로컬 데이터를 초기화했습니다.",
     );
 
     await user.click(screen.getByRole("button", { name: "이 문제로 시작하기" }));

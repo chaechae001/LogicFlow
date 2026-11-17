@@ -3,6 +3,7 @@ export {
   oliveyoungPracticeCase,
 } from "./fixtures/oliveyoung-practice-case";
 export * from "./schemas";
+export * from "./v2-context";
 export {
   THINKING_STAGES,
   WRITING_MODES,

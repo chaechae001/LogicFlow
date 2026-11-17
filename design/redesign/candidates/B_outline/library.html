@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>저장소 — Logic Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,700;12..96,75..100,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+  .dbtabs{display:flex;gap:6px;border-bottom:1px solid var(--rule);margin:26px 0 0}
+  .dbtabs button{border:0;background:transparent;padding:12px 16px;font-size:14px;cursor:pointer;color:var(--muted);
+                 border-bottom:2px solid transparent;display:flex;align-items:center;gap:8px}
+  .dbtabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--deep)}
+  .dbtabs .ct{font-family:var(--mono);font-size:11px;background:var(--surface-2);border:1px solid var(--rule);
+              border-radius:99px;padding:1px 7px;color:var(--muted)}
+  .db{display:none;padding-top:26px}
+  .db[data-on]{display:block}
+
+  /* quick capture */
+  .capture{border:1px solid var(--rule);border-radius:var(--r-lg);background:var(--surface);padding:18px 20px;box-shadow:var(--shadow)}
+  .capture textarea{width:100%;border:0;background:transparent;outline:0;resize:vertical;min-height:60px;font-size:15px;line-height:1.7}
+  .capture textarea::placeholder{color:var(--faint)}
+  .capture .bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+
+  /* list */
+  .filters{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:22px 0 14px}
+  .search{flex:1;min-width:200px;border:1px solid var(--rule);border-radius:var(--r);background:var(--surface);padding:9px 13px;font-size:13.5px}
+  .search::placeholder{color:var(--faint)}
+
+  .item{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:16px;align-items:start;
+        border:1px solid var(--rule);border-radius:var(--r);background:var(--surface);padding:14px 16px;margin-bottom:8px}
+  .item:hover{border-color:var(--rule-strong)}
+  .item .when{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--faint);padding-top:4px}
+  .item .txt{font-size:14.5px;line-height:1.65}
+  .item .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;align-items:center}
+  .item .acts{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .rep{font-family:var(--mono);font-size:10.5px;color:var(--deep);background:var(--deep-wash);border-radius:99px;padding:2px 8px}
+  @media(max-width:760px){
+    .item{grid-template-columns:1fr}
+    .item .acts{flex-direction:row;align-items:center;justify-content:flex-start}
+  }
+
+  /* question groups */
+  .qgroup{border:1px solid var(--rule);border-radius:var(--r-lg);background:var(--surface);margin-bottom:12px;overflow:hidden}
+  .qgroup > header{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--rule);background:var(--surface-2)}
+  .qgroup ul{list-style:none;margin:0;padding:6px 0}
+  .qgroup li{display:flex;align-items:center;gap:12px;padding:9px 18px;font-size:14px}
+  .qgroup li + li{border-top:1px solid var(--rule)}
+  .qgroup li .star{border:0;background:transparent;cursor:pointer;color:var(--faint);font-size:15px;line-height:1}
+  .qgroup li .star.on{color:var(--attn)}
+  .qgroup{border-left:3px solid var(--rule-strong)}
+  .qg-def{border-left-color:var(--fam-def)}
+  .qg-str{border-left-color:var(--fam-str)}
+  .qg-val{border-left-color:var(--fam-val)}
+  .qg-exp{border-left-color:var(--fam-exp)}
+  .qgroup li .use{margin-left:auto;opacity:0;transition:opacity .12s}
+  .qgroup li:hover .use{opacity:1}
+
+  /* case cards */
+  .cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .casecard{border:1px solid var(--rule);border-left:3px solid var(--rule-strong);border-radius:var(--r-lg);
+            background:var(--surface);padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+  .casecard h3{font-size:15.5px;line-height:1.45}
+  .casecard .foot{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:12px;border-top:1px solid var(--rule)}
+
+  /* promote flow strip */
+  .promote{display:flex;align-items:center;gap:0;border:1px solid var(--rule);border-radius:var(--r);
+           background:var(--surface-2);padding:10px 14px;margin-bottom:22px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+  .promote b{color:var(--ink)}
+  .promote .sep{margin:0 10px;color:var(--rule-strong);font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <a class="mark" href="index.html"><i></i>Logic Flow</a>
+    <nav class="nav">
+      <a href="landing.html">소개</a>
+      <a href="start.html">훈련 시작</a>
+      <a href="workspace.html">작업 화면</a>
+      <a href="library.html" aria-current="page">저장소</a>
+      <a href="portfolio.html">포트폴리오</a>
+      <a href="community.html">커뮤니티</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap" style="padding-top:40px;padding-bottom:70px">
+
+  <div class="spread" style="align-items:flex-end;flex-wrap:wrap;gap:20px">
+    <div style="max-width:56ch">
+      <span class="label label-deep">저장소</span>
+      <h1 style="margin-top:10px;font-size:clamp(26px,3.4vw,36px)">생각의 재료를 모아두는 곳</h1>
+      <p class="lede" style="margin-top:12px">떠오른 것을 두 줄로 던져두면 됩니다. 자주 적은 것부터 문제로 자라납니다.</p>
+    </div>
+    <a class="btn" href="start.html">이 재료로 훈련 시작</a>
+  </div>
+
+  <div class="promote">
+    <b>관찰</b> <span class="sep">→</span> <b>질문</b> <span class="sep">→</span> <b>케이스</b> <span class="sep">→</span> <b>결과물</b>
+    <span style="margin-left:14px">같은 기록을 단계적으로 키웁니다. 새로 쓰지 않습니다.</span>
+  </div>
+
+  <div class="dbtabs" role="tablist">
+    <button role="tab" aria-selected="true" data-db="db-insight">관찰 저장소 <span class="ct">142</span></button>
+    <button role="tab" aria-selected="false" data-db="db-question">질문 저장소 <span class="ct">38</span></button>
+    <button role="tab" aria-selected="false" data-db="db-case">사고 케이스 <span class="ct">9</span></button>
+  </div>
+
+  <!-- ================= INSIGHT DB ================= -->
+  <section class="db" id="db-insight" data-on>
+    <div class="capture">
+      <textarea placeholder="방금 발견한 것을 적어보세요. 두 줄이면 충분합니다.&#10;예) 결제 화면에서 카드 등록을 다시 요구받았다. 지난달에도 같은 일이 있었다."></textarea>
+      <div class="bar">
+        <span class="label">이건</span>
+        <div class="chips">
+          <button class="chip" aria-pressed="true">직접 본 사실</button>
+          <button class="chip" aria-pressed="false">내 해석</button>
+        </div>
+        <span class="label" style="margin-left:8px">어디서</span>
+        <div class="chips">
+          <button class="chip" aria-pressed="false">일상</button>
+          <button class="chip" aria-pressed="false">수업</button>
+          <button class="chip" aria-pressed="false">뉴스</button>
+          <button class="chip" aria-pressed="true">업무</button>
+          <button class="chip" aria-pressed="false">프로젝트</button>
+        </div>
+        <button class="btn btn-sm" style="margin-left:auto">저장</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input class="search" placeholder="관찰 내용 검색">
+      <div class="chips">
+        <button class="chip" aria-pressed="true">전체</button>
+        <button class="chip" aria-pressed="false">사실만</button>
+        <button class="chip" aria-pressed="false">해석만</button>
+        <button class="chip" aria-pressed="false">반복 2회 이상</button>
+        <button class="chip" aria-pressed="false">아직 안 쓴 것</button>
+      </div>
+    </div>
+
+    <div class="item">
+      <span class="when">11.28 목</span>
+      <div>
+        <p class="txt">첫 주문 쿠폰 만료가 7일인데, 신규 사용자 재방문 중앙값은 24일이다.</p>
+        <div class="meta"><span class="tag t-fact">사실</span><span class="tag t-plain">업무</span><span class="tag t-plain">리텐션</span><span class="rep">비슷한 기록 3회</span></div>
+      </div>
+      <div class="acts">
+        <button class="btn btn-sm">문제로 키우기</button>
+        <button class="btn btn-ghost btn-sm">질문으로</button>
+      </div>
+    </div>
+
+    <div class="item">
+      <span class="when">11.27 수</span>
+      <div>
+        <p class="txt">주간 회의가 한 시간을 넘겼는데 결정된 것은 없었다. 다음 주에 같은 안건이 다시 올라왔다.</p>
+        <div class="meta"><span class="tag t-fact">사실</span><span class="tag t-plain">업무</span><span class="rep">비슷한 기록 2회</span></div>
+      </div>
+      <div class="acts">
+        <button class="btn btn-sm">문제로 키우기</button>
+        <button class="btn btn-ghost btn-sm">질문으로</button>
+      </div>
+    </div>
+
+    <div class="item">
+      <span class="when">11.26 화</span>
+      <div>
+        <p class="txt">동네에 시킬 만한 곳이 없어서 배달 앱을 안 여는 사람도 있는 것 같다.</p>
+        <div class="meta"><span class="tag t-interp">해석</span><span class="tag t-plain">일상</span><span class="tag t-unknown">확인 필요</span></div>
+      </div>
+      <div class="acts">
+        <button class="btn btn-ghost btn-sm">사실로 바꾸기</button>
+        <button class="btn btn-ghost btn-sm">질문으로</button>
+      </div>
+    </div>
+
+    <div class="item">
+      <span class="when">11.25 월</span>
+      <div>
+        <p class="txt">국내 구독 서비스 해지율 리포트에서 “가격 인상 후 3개월 내 해지가 전체 해지의 절반”이라는 수치를 봤다.</p>
+        <div class="meta"><span class="tag t-fact">사실</span><span class="tag t-plain">뉴스</span><span class="tag t-plain">가격</span></div>
+      </div>
+      <div class="acts">
+        <button class="btn btn-sm">문제로 키우기</button>
+        <button class="btn btn-ghost btn-sm">질문으로</button>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:18px">사실인지 해석인지만 표시하면 됩니다. 이 구분 하나가 나중에 문제 정의를 훨씬 쉽게 만듭니다.</p>
+  </section>
+
+  <!-- ================= QUESTION DB ================= -->
+  <section class="db" id="db-question">
+    <div class="capture">
+      <textarea placeholder="좋은 질문을 만났다면 여기에 적어두세요.&#10;예) 이 분류에서 빠진 사람은 누구인가?" style="min-height:46px"></textarea>
+      <div class="bar">
+        <span class="label">어느 단계에서 쓰는 질문</span>
+        <div class="chips">
+          <button class="chip" aria-pressed="false">맥락</button>
+          <button class="chip" aria-pressed="false">관찰</button>
+          <button class="chip" aria-pressed="false">문제 정의</button>
+          <button class="chip" aria-pressed="true">문제 분해</button>
+          <button class="chip" aria-pressed="false">가설</button>
+          <button class="chip" aria-pressed="false">검증</button>
+          <button class="chip" aria-pressed="false">의사결정</button>
+          <button class="chip" aria-pressed="false">회고</button>
+        </div>
+        <button class="btn btn-sm" style="margin-left:auto">저장</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input class="search" placeholder="질문 검색">
+      <div class="chips">
+        <button class="chip" aria-pressed="true">전체</button>
+        <button class="chip" aria-pressed="false">즐겨찾기</button>
+        <button class="chip" aria-pressed="false">내가 쓴 것</button>
+        <button class="chip" aria-pressed="false">코치가 던진 것</button>
+      </div>
+    </div>
+
+    <div class="qgroup qg-def">
+      <header><span class="cat c-def">정의 · 문제 정의</span><span class="tiny" style="margin-left:auto">9개</span></header>
+      <ul>
+        <li><button class="star on" aria-label="즐겨찾기 해제">★</button>이 문장에 해결책이 미리 들어가 있지는 않은가?<button class="btn btn-ghost btn-sm use">작업 화면으로</button></li>
+        <li><button class="star" aria-label="즐겨찾기">☆</button>지금 쓴 것이 원인이 아니라 현상은 아닌가?<button class="btn btn-ghost btn-sm use">작업 화면으로</button></li>
+        <li><button class="star on" aria-label="즐겨찾기 해제">★</button>이 문제가 해결되면 무엇이 달라지는가?<button class="btn btn-ghost btn-sm use">작업 화면으로</button></li>
+      </ul>
+    </div>
+
+    <div class="qgroup qg-str">
+      <header><span class="cat c-str">구조 · 문제 분해</span><span class="tiny" style="margin-left:auto">7개</span></header>
+      <ul>
+        <li><button class="star on" aria-label="즐겨찾기 해제">★</button>이 분류에서 빠진 사람은 누구인가?<button class="btn btn-ghost btn-sm use">작업 화면으로</button></li>
+        <li><button class="star" aria-label="즐겨찾기">☆</button>기준을 바꾸면 결론이 달라지는가?<button class="btn btn-ghost btn-sm use">작업 화면으로</button></li>
+        <li><button class="star" aria-label="즐겨찾기">☆</button>이 가지를 더 쪼갤 수 있는가, 여기서 멈춰도 되는가?<button class="btn btn-ghost btn-sm use">작업 화면으로</button></li>
+      </ul>
+    </div>
+
+    <div class="qgroup qg-val">
+      <header><span class="cat c-val">검증 · 가설과 근거</span><span class="tiny" style="margin-left:auto">11개</span></header>
+      <ul>
+        <li><button class="star on" aria-label="즐겨찾기 해제">★</button>무엇을 보면 이 가설을 접겠는가?<button class="btn btn-ghost btn-sm use">작업 화면으로</button></li>
+        <li><button class="star" aria-label="즐겨찾기">☆</button>이 가설이 전부 틀렸다면 남는 가능성은?<button class="btn btn-ghost btn-sm use">작업 화면으로</button></li>
+        <li><button class="star" aria-label="즐겨찾기">☆</button>비교 대상 없이 이 숫자를 해석하고 있지는 않은가?<button class="btn btn-ghost btn-sm use">작업 화면으로</button></li>
+      </ul>
+    </div>
+
+    <p class="note" style="margin-top:18px">작업 화면 오른쪽 “내 저장소” 탭에서 지금 단계에 맞는 질문만 추려 보여줍니다.</p>
+  </section>
+
+  <!-- ================= CASE DB ================= -->
+  <section class="db" id="db-case">
+    <div class="filters">
+      <input class="search" placeholder="케이스 검색">
+      <div class="chips">
+        <button class="chip" aria-pressed="true">전체</button>
+        <button class="chip" aria-pressed="false">진행 중</button>
+        <button class="chip" aria-pressed="false">완료</button>
+        <button class="chip" aria-pressed="false">포트폴리오로 만든 것</button>
+      </div>
+    </div>
+
+    <div class="cases">
+      <div class="casecard" style="border-left-color:var(--sec-commerce)">
+        <div class="row"><span class="cat c-commerce">커머스</span><span class="lv" style="color:var(--lv2)">기본 <span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></span></span></div>
+        <h3>배달 앱 신규 사용자의 두 번째 주문 비율이 낮다</h3>
+        <p class="small">4단계까지 진행 · 수정 11회 · 코치 점검 3회</p>
+        <span class="meter"><i style="width:57%"></i></span>
+        <div class="foot"><span class="tiny">1분 전</span><a class="btn btn-sm" href="workspace.html" style="margin-left:auto">이어서</a></div>
+      </div>
+
+      <div class="casecard" style="border-left-color:var(--sec-saas)">
+        <div class="row"><span class="cat c-saas">B2B SaaS</span><span class="lv" style="color:var(--lv4)">도전 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span></div>
+        <h3>도입 후 30일 안에 핵심 기능을 한 번도 안 쓴 계정이 절반</h3>
+        <p class="small">완료 · 수정 34회 · 포트폴리오 생성됨</p>
+        <span class="meter"><i style="width:100%"></i></span>
+        <div class="foot"><span class="tiny">11월 20일</span><a class="btn btn-ghost btn-sm" href="portfolio.html" style="margin-left:auto">결과물 보기</a></div>
+      </div>
+
+      <div class="casecard" style="border-left-color:var(--sec-hr)">
+        <div class="row"><span class="cat c-hr">HR·업무</span><span class="lv" style="color:var(--lv1)">입문 <span class="pips"><i class="on"></i><i></i><i></i><i></i></span></span></div>
+        <h3>주간 회의가 결론 없이 길어진다</h3>
+        <p class="small">문제 정의까지 완료 · 다음 단계 대기</p>
+        <span class="meter"><i style="width:28%"></i></span>
+        <div class="foot"><span class="tiny">11월 27일</span><a class="btn btn-sm" href="workspace.html" style="margin-left:auto">이어서</a></div>
+      </div>
+
+      <div class="casecard" style="border-left-color:var(--sec-content)">
+        <div class="row"><span class="cat c-content">콘텐츠</span><span class="lv" style="color:var(--lv3)">심화 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span></div>
+        <h3>OTT 첫 주 시청 완료율을 어떻게 올리겠습니까</h3>
+        <p class="small">완료 · 30분 · 면접 답변으로 변환됨</p>
+        <span class="meter"><i style="width:100%"></i></span>
+        <div class="foot"><span class="tiny">11월 18일</span><a class="btn btn-ghost btn-sm" href="portfolio.html" style="margin-left:auto">결과물 보기</a></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  document.querySelectorAll('.dbtabs button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.dbtabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    document.querySelectorAll('.db').forEach(p => p.removeAttribute('data-on'));
+    document.getElementById(b.dataset.db).setAttribute('data-on','');
+  }));
+  document.querySelectorAll('.chips').forEach(g => g.addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if(!c) return;
+    g.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === c)));
+  }));
+  document.querySelectorAll('.star').forEach(s => s.addEventListener('click', () => {
+    s.classList.toggle('on'); s.textContent = s.classList.contains('on') ? '★' : '☆';
+  }));
+</script>
+</body>
+</html>

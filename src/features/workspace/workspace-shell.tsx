@@ -1,7 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import { RouteErrorState } from "../../components/route-error-state";
 import { RouteLoadingState } from "../../components/route-loading-state";
@@ -9,12 +15,22 @@ import { SiteHeader } from "../../components/site-header";
 import {
   THINKING_STAGES,
   type CaseStepStatus,
+  type ContextFieldKey,
   type ThinkingStage,
   type WritingMode,
 } from "../../domain";
 import { createBrowserThinkingCaseRepository } from "../../repositories/browser-repository";
-import type { ThinkingCaseBundle } from "../../repositories";
+import {
+  InvalidStoredDataError,
+  StorageAccessError,
+  UnsupportedStorageVersionError,
+  type V2ThinkingCaseBundle,
+} from "../../repositories";
 import { getPracticeCaseById } from "../practice/practice-case-catalog";
+import {
+  CONTEXT_STAGE_CONTENT,
+  CONTEXT_STRUCTURED_QUESTIONS,
+} from "./context-stage-config";
 import {
   CASE_STEP_STATUS_LABELS,
   WORKSPACE_STAGES,
@@ -38,9 +54,9 @@ export type AiCoachState = "locked" | "ready";
 
 type LoadState =
   | { status: "loading" }
-  | { status: "loaded"; bundle: ThinkingCaseBundle }
+  | { status: "loaded"; bundle: V2ThinkingCaseBundle }
   | { status: "not_found" }
-  | { status: "error" };
+  | { status: "error"; error: unknown };
 
 export function WorkspaceShellRoute({
   caseId,
@@ -62,9 +78,10 @@ export function WorkspaceShellRoute({
         }
 
         setLoadState(bundle ? { status: "loaded", bundle } : { status: "not_found" });
-      } catch {
+      } catch (error) {
+        logWorkspaceFailure("V2 Thinking Case 조회 실패", error);
         if (isActive) {
-          setLoadState({ status: "error" });
+          setLoadState({ status: "error", error });
         }
       }
     }
@@ -81,6 +98,18 @@ export function WorkspaceShellRoute({
   }
 
   if (loadState.status === "error") {
+    if (isRecoverableV2StorageError(loadState.error)) {
+      return (
+        <WorkspaceStorageRecovery
+          error={loadState.error}
+          onReset={() => {
+            setLoadState({ status: "loading" });
+            setLoadAttempt((attempt) => attempt + 1);
+          }}
+        />
+      );
+    }
+
     return (
       <RouteErrorState
         description="이 브라우저에 저장된 Thinking Case를 읽지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해주세요."
@@ -100,20 +129,89 @@ export function WorkspaceShellRoute({
   return <WorkspaceShell bundle={loadState.bundle} stage={stage} />;
 }
 
+function WorkspaceStorageRecovery({
+  error,
+  onReset,
+}: {
+  error: InvalidStoredDataError | UnsupportedStorageVersionError;
+  onReset: () => void;
+}) {
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  async function resetV2Data() {
+    if (isResetting) {
+      return;
+    }
+
+    setIsResetting(true);
+    setResetError(null);
+    try {
+      const repository = createBrowserThinkingCaseRepository();
+      await repository.resetLocalData();
+      onReset();
+    } catch (resetFailure) {
+      logWorkspaceFailure("V2 로컬 데이터 초기화 실패", resetFailure);
+      setResetError(
+        "V2 로컬 데이터를 초기화하지 못했습니다. 브라우저 저장소 설정을 확인해주세요.",
+      );
+      setIsResetting(false);
+    }
+  }
+
+  return (
+    <main className="grid min-h-screen place-items-center px-6 py-12">
+      <section
+        className="w-full max-w-2xl rounded-[2rem] border border-[#c7776b] bg-[#fff5f2] p-8 sm:p-12"
+        role="alert"
+      >
+        <p className="text-xs font-bold tracking-[0.14em] text-[#9b3e34] uppercase">
+          V2 저장 데이터 복구
+        </p>
+        <h1 className="mt-4 font-serif text-4xl font-semibold tracking-[-0.04em] text-[var(--ink)]">
+          저장된 V2 데이터가 현재 구조와 호환되지 않습니다.
+        </h1>
+        <p className="mt-5 text-sm leading-7 text-[var(--muted)]">
+          계속하려면 이 브라우저의 Thinking Flow V2 데이터만 초기화해야 합니다.
+          V1 데이터는 삭제되지 않으며 자동 migration도 수행하지 않습니다.
+        </p>
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          오류 유형: {error.name}
+        </p>
+        {resetError ? (
+          <p className="mt-4 text-sm font-semibold text-[#9b3e34]">
+            {resetError}
+          </p>
+        ) : null}
+        <button
+          className="mt-7 rounded-full bg-[#9b3e34] px-6 py-3 text-sm font-bold text-white disabled:cursor-wait disabled:opacity-60"
+          disabled={isResetting}
+          onClick={resetV2Data}
+          type="button"
+        >
+          {isResetting ? "V2 데이터 초기화 중..." : "V2 로컬 데이터 초기화"}
+        </button>
+      </section>
+    </main>
+  );
+}
+
 interface WorkspaceShellProps {
   aiCoachState?: AiCoachState;
-  bundle: ThinkingCaseBundle;
+  bundle: V2ThinkingCaseBundle;
   stage: ThinkingStage;
 }
 
 export function WorkspaceShell({
   aiCoachState = "locked",
-  bundle,
+  bundle: initialBundle,
   stage,
 }: WorkspaceShellProps) {
   const router = useRouter();
+  const [bundle, setBundle] = useState(initialBundle);
   const [pendingNavigation, setPendingNavigation] =
     useState<PendingNavigation | null>(null);
+
   const stageDefinition = getWorkspaceStage(stage);
   const currentStageIndex = THINKING_STAGES.indexOf(stage);
   const currentStep = getStageStep(bundle.steps, stage);
@@ -207,10 +305,19 @@ export function WorkspaceShell({
                 {stageDefinition.label}
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--muted)]">
-                {stageDefinition.objective}
+                {stage === "context"
+                  ? CONTEXT_STAGE_CONTENT.easyDescription
+                  : stageDefinition.objective}
               </p>
 
-              <WritingModeShell key={stage} />
+              {stage === "context" ? (
+                <ContextStageEditor
+                  bundle={bundle}
+                  onBundleSaved={setBundle}
+                />
+              ) : (
+                <WritingModeShell key={stage} />
+              )}
 
               {practiceCase ? (
                 <PracticeCaseReference practiceCase={practiceCase} />
@@ -241,7 +348,275 @@ export function WorkspaceShell({
 interface StageNavigationProps {
   activeStage: ThinkingStage;
   onNavigate: (stage: ThinkingStage) => void;
-  steps: ThinkingCaseBundle["steps"];
+  steps: V2ThinkingCaseBundle["steps"];
+}
+
+type ContextDraftValues = Record<ContextFieldKey, string>;
+type DraftSaveStatus = "idle" | "saving" | "saved" | "error";
+
+const EMPTY_CONTEXT_DRAFT: ContextDraftValues = {
+  "context.freeform": "",
+  "context.goal": "",
+  "context.current_situation": "",
+  "context.stakeholders": "",
+  "context.constraints_success": "",
+};
+
+function ContextStageEditor({
+  bundle,
+  onBundleSaved,
+}: {
+  bundle: V2ThinkingCaseBundle;
+  onBundleSaved: (bundle: V2ThinkingCaseBundle) => void;
+}) {
+  const savedMode =
+    getStageStep(bundle.steps, "context")?.writingMode ?? null;
+  const [mode, setMode] = useState<WritingMode | null>(savedMode);
+  const [values, setValues] = useState<ContextDraftValues>(() =>
+    readContextDraftValues(bundle),
+  );
+  const [dirtyFieldKeys, setDirtyFieldKeys] = useState<
+    Set<ContextFieldKey>
+  >(new Set());
+  const [modeDirty, setModeDirty] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<DraftSaveStatus>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const hasDirtyChanges = modeDirty || dirtyFieldKeys.size > 0;
+
+  function selectMode(nextMode: WritingMode) {
+    setMode(nextMode);
+    setModeDirty(nextMode !== savedMode);
+    setSaveStatus("idle");
+    setSaveError(null);
+  }
+
+  function updateField(fieldKey: ContextFieldKey, value: string) {
+    setValues((current) => ({ ...current, [fieldKey]: value }));
+    setDirtyFieldKeys((current) => {
+      const next = new Set(current);
+      next.add(fieldKey);
+      return next;
+    });
+    setSaveStatus("idle");
+    setSaveError(null);
+  }
+
+  async function saveDraft(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!hasDirtyChanges || saveStatus === "saving") {
+      return;
+    }
+
+    setSaveStatus("saving");
+    setSaveError(null);
+
+    try {
+      const repository = createBrowserThinkingCaseRepository();
+      const result = await repository.saveContextDraft({
+        caseId: bundle.thinkingCase.id,
+        writingMode: mode,
+        fields: Array.from(dirtyFieldKeys).map((fieldKey) => ({
+          fieldKey,
+          contentJson: { type: "text", value: values[fieldKey] },
+        })),
+      });
+
+      setDirtyFieldKeys(new Set());
+      setModeDirty(false);
+      setSaveStatus("saved");
+      onBundleSaved(result.bundle);
+    } catch (error) {
+      logWorkspaceFailure("Context 초안 저장 실패", error);
+      setSaveError(
+        "초안을 저장하지 못했습니다. 작성 내용은 화면에 유지됩니다. 다시 시도해주세요.",
+      );
+      setSaveStatus("error");
+    }
+  }
+
+  return (
+    <form className="mt-10 space-y-7" onSubmit={saveDraft}>
+      <section className="rounded-[1.75rem] border border-[var(--line-strong)] bg-[var(--surface)] px-6 py-7 sm:px-8">
+        <p className="text-xs font-bold tracking-[0.12em] text-[var(--accent)] uppercase">
+          먼저 내 생각부터
+        </p>
+        <p className="mt-3 text-sm leading-7 text-[var(--ink)]">
+          {CONTEXT_STAGE_CONTENT.freeformGuide}
+        </p>
+        <p className="mt-2 text-xs leading-6 text-[var(--muted)]">
+          {CONTEXT_STAGE_CONTENT.freeformSupport}
+        </p>
+      </section>
+
+      <ContextLearningGuide />
+
+      <section
+        aria-labelledby="writing-mode-title"
+        className="rounded-[1.75rem] border border-[var(--line-strong)] bg-[var(--surface)] px-6 py-7 sm:px-8"
+      >
+        <p className="text-xs font-bold tracking-[0.12em] text-[var(--muted)] uppercase">
+          사용자 작성 영역
+        </p>
+        <h3
+          className="mt-3 text-xl font-bold tracking-[-0.02em] text-[var(--ink)]"
+          id="writing-mode-title"
+        >
+          자유 작성으로 시작하고, 구조화 질문으로 보완해보세요.
+        </h3>
+        <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+          처음부터 구조화 입력을 선택해도 됩니다. 작성 방식을 바꿔도 이전에
+          작성한 내용은 유지됩니다.
+        </p>
+
+        <div
+          aria-label="작성 방식"
+          className="mt-6 grid gap-3 sm:grid-cols-2"
+          role="group"
+        >
+          <WritingModeButton
+            description="권장: 지금 떠오르는 생각을 짧게 먼저 남깁니다."
+            isSelected={mode === "freeform"}
+            label="자유 작성"
+            onSelect={() => selectMode("freeform")}
+          />
+          <WritingModeButton
+            description="네 질문을 따라 빠진 목적과 맥락을 보완합니다."
+            isSelected={mode === "structured"}
+            label="구조화 입력"
+            onSelect={() => selectMode("structured")}
+          />
+        </div>
+
+        <div className="mt-6">
+          {mode === null ? (
+            <WritingModePlaceholder
+              description="자유 작성을 권장하지만 구조화 입력으로 바로 시작할 수도 있습니다."
+              eyebrow="작성 방식 미선택"
+              title="내 생각을 꺼낼 방식을 직접 선택해주세요."
+            />
+          ) : mode === "freeform" ? (
+            <label className="block" htmlFor="context-freeform">
+              <span className="text-sm font-bold text-[var(--ink)]">
+                목적과 맥락에 대한 내 첫 생각
+              </span>
+              <textarea
+                className="mt-3 min-h-64 w-full resize-y rounded-2xl border border-[var(--line-strong)] bg-white px-5 py-4 text-sm leading-7 text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[#b9dce5]"
+                id="context-freeform"
+                onChange={(event) =>
+                  updateField("context.freeform", event.target.value)
+                }
+                placeholder="완성된 문장보다 지금 떠오르는 목적, 상황, 이해관계자, 범위와 제약을 먼저 적어보세요."
+                value={values["context.freeform"]}
+              />
+            </label>
+          ) : (
+            <fieldset className="space-y-6">
+              <legend className="text-sm font-bold text-[var(--ink)]">
+                목적·맥락 구조화 질문
+              </legend>
+              {CONTEXT_STRUCTURED_QUESTIONS.map((question) => (
+                <label className="block" key={question.fieldKey}>
+                  <span className="flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--ink)]">
+                    {question.label}
+                    <span className="rounded-full bg-[#e4f1f4] px-2.5 py-1 text-[0.68rem] text-[#19576b]">
+                      {question.requiredCandidate ? "필수 후보" : "선택"}
+                    </span>
+                  </span>
+                  <span className="mt-2 block text-xs leading-5 text-[var(--muted)]">
+                    {question.helpText}
+                  </span>
+                  <textarea
+                    aria-label={question.label}
+                    className="mt-3 min-h-32 w-full resize-y rounded-2xl border border-[var(--line-strong)] bg-white px-5 py-4 text-sm leading-7 text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[#b9dce5]"
+                    onChange={(event) =>
+                      updateField(question.fieldKey, event.target.value)
+                    }
+                    value={values[question.fieldKey]}
+                  />
+                </label>
+              ))}
+            </fieldset>
+          )}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-4 rounded-2xl border border-[var(--line)] bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div aria-live="polite" role="status">
+          <p className="text-sm font-bold text-[var(--ink)]">
+            {getDraftStatusLabel(saveStatus, hasDirtyChanges)}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+            autosave 없이 초안 저장 버튼을 눌렀을 때만 V2 저장소에 기록됩니다.
+          </p>
+          {saveError ? (
+            <p className="mt-2 text-xs font-semibold text-[#9b3e34]">
+              {saveError}
+            </p>
+          ) : null}
+        </div>
+        <button
+          className="rounded-full bg-[var(--ink)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:bg-[var(--muted)]"
+          disabled={!hasDirtyChanges || saveStatus === "saving"}
+          type="submit"
+        >
+          {saveStatus === "saving" ? "저장 중..." : "초안 저장"}
+        </button>
+      </section>
+    </form>
+  );
+}
+
+function ContextLearningGuide() {
+  return (
+    <section
+      aria-label="목적·맥락 이해 학습 도움말"
+      className="space-y-3"
+    >
+      <details className="rounded-2xl border border-[var(--line)] bg-white px-5 py-4">
+        <summary className="cursor-pointer text-sm font-bold text-[var(--ink)]">
+          왜 필요한가
+        </summary>
+        <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+          {CONTEXT_STAGE_CONTENT.whyItMatters}
+        </p>
+      </details>
+      <details className="rounded-2xl border border-[var(--line)] bg-white px-5 py-4">
+        <summary className="cursor-pointer text-sm font-bold text-[var(--ink)]">
+          좋은 예시
+        </summary>
+        <p className="mt-3 text-xs font-bold text-[var(--accent)]">
+          가상의 Practice Case 예시이며 실제 성과나 사용자 행동이 아닙니다.
+        </p>
+        <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
+          {CONTEXT_STAGE_CONTENT.goodExample}
+        </p>
+      </details>
+      <details className="rounded-2xl border border-[var(--line)] bg-white px-5 py-4">
+        <summary className="cursor-pointer text-sm font-bold text-[var(--ink)]">
+          좋지 않은 예시
+        </summary>
+        <p className="mt-3 text-sm font-semibold text-[var(--ink)]">
+          {CONTEXT_STAGE_CONTENT.badExample}
+        </p>
+        <ul className="mt-3 space-y-2 text-xs leading-5 text-[var(--muted)]">
+          {CONTEXT_STAGE_CONTENT.badExampleProblems.map((problem) => (
+            <li key={problem}>— {problem}</li>
+          ))}
+        </ul>
+      </details>
+      <details className="rounded-2xl border border-[var(--line)] bg-white px-5 py-4">
+        <summary className="cursor-pointer text-sm font-bold text-[var(--ink)]">
+          자주 하는 실수
+        </summary>
+        <ul className="mt-3 space-y-2 text-xs leading-5 text-[var(--muted)]">
+          {CONTEXT_STAGE_CONTENT.commonMistakes.map((mistake) => (
+            <li key={mistake}>— {mistake}</li>
+          ))}
+        </ul>
+      </details>
+    </section>
+  );
 }
 
 function WritingModeShell() {
@@ -656,6 +1031,69 @@ function WorkspaceNotFound() {
         </button>
       </section>
     </main>
+  );
+}
+
+function readContextDraftValues(
+  bundle: V2ThinkingCaseBundle,
+): ContextDraftValues {
+  const values = { ...EMPTY_CONTEXT_DRAFT };
+
+  for (const response of bundle.fieldResponses) {
+    if (!(response.fieldKey in values)) {
+      continue;
+    }
+
+    const version = bundle.responseVersions.find(
+      (candidate) => candidate.id === response.currentVersionId,
+    );
+    if (version?.contentJson.type === "text") {
+      values[response.fieldKey as ContextFieldKey] =
+        version.contentJson.value;
+    }
+  }
+
+  return values;
+}
+
+function getDraftStatusLabel(
+  saveStatus: DraftSaveStatus,
+  hasDirtyChanges: boolean,
+): string {
+  if (saveStatus === "saving") {
+    return "저장 중";
+  }
+  if (saveStatus === "error") {
+    return "저장 실패";
+  }
+  if (hasDirtyChanges) {
+    return "저장 전 변경사항 있음";
+  }
+  if (saveStatus === "saved") {
+    return "저장됨";
+  }
+  return "저장된 변경사항 없음";
+}
+
+function logWorkspaceFailure(action: string, error: unknown) {
+  if (
+    error instanceof UnsupportedStorageVersionError ||
+    error instanceof InvalidStoredDataError ||
+    error instanceof StorageAccessError
+  ) {
+    console.warn("[Thinking Flow V2] " + action, error);
+    return;
+  }
+
+  console.error("[Thinking Flow V2] " + action, error);
+}
+
+function isRecoverableV2StorageError(
+  error: unknown,
+): error is InvalidStoredDataError | UnsupportedStorageVersionError {
+  return (
+    error instanceof InvalidStoredDataError ||
+    error instanceof UnsupportedStorageVersionError
   );
 }
 

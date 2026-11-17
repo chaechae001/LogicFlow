@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>화면 시안 — LogicFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,700;12..96,75..100,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+  .screens{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+  .screen{border:1px solid var(--rule);border-radius:var(--r-lg);background:var(--surface);padding:20px 22px 22px;
+          text-decoration:none;display:flex;flex-direction:column;gap:9px;transition:border-color .14s,transform .14s}
+  .screen:hover{border-color:var(--deep);transform:translateY(-2px)}
+  .screen h3{font-size:16px}
+  .screen p{font-size:13.5px;color:var(--muted);line-height:1.65}
+  .screen .go{margin-top:auto;padding-top:12px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--deep)}
+
+  .swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+  .sw{border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+  .sw .chip-c{height:56px}
+  .sw .meta{padding:8px 10px}
+  .sw .nm{font-size:12.5px;font-weight:600}
+  .sw .hx{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+
+  .typerow{border:1px solid var(--rule);border-radius:var(--r);background:var(--surface);padding:18px 20px;margin-bottom:9px}
+  .typerow .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <a class="mark" href="index.html"><i></i>LogicFlow</a>
+    <nav class="nav">
+      <a href="landing.html">소개</a>
+      <a href="start.html">훈련 시작</a>
+      <a href="workspace.html">작업 화면</a>
+      <a href="library.html">저장소</a>
+      <a href="portfolio.html">포트폴리오</a>
+      <a href="community.html">커뮤니티</a>
+    </nav>
+    <button class="thm" aria-label="다크 모드 전환" style="margin-left:14px">🌙</button>
+  </div>
+</div>
+
+<div class="wrap" style="padding-top:48px;padding-bottom:70px">
+
+  <div style="max-width:64ch">
+    <span class="label label-deep">화면 시안 · v2</span>
+    <h1 style="margin-top:10px;font-size:clamp(28px,4vw,42px)">LogicFlow 화면 설계</h1>
+    <p class="lede" style="margin-top:14px">논리적 사고 훈련 서비스의 처음부터 다시 만든 화면 시안입니다. 기존 폴더의 구조·디자인은 참고하지 않았습니다. 서비스명은 LogicFlow로 확정했습니다.</p>
+  </div>
+
+  <div class="rule-head"><span class="label">화면</span></div>
+  <div class="screens">
+    <a class="screen" href="landing.html">
+      <span class="label">01</span>
+      <h3>랜딩</h3>
+      <p>히어로에 제품의 실제 동작을 그대로 넣었습니다. 한 줄 문제 정의가 로직 트리로 갈라지고, 근거 없는 가지에 주의 표시가 붙습니다.</p>
+      <span class="go">열기 →</span>
+    </a>
+    <a class="screen" href="start.html">
+      <span class="label">02</span>
+      <h3>훈련 시작</h3>
+      <p>목적 · 주제 · 템플릿 세 가지만 정합니다. 오늘의 이슈, 산업·기업, 내 저장소에서 주제를 고를 수 있고 단계 수는 직접 켜고 끕니다.</p>
+      <span class="go">열기 →</span>
+    </a>
+    <a class="screen" href="workspace.html">
+      <span class="label">03</span>
+      <h3>작업 화면</h3>
+      <p>핵심 화면입니다. 질문을 한 번에 하나만 보여주고, 답한 만큼 아래 도식이 자랍니다. <b>10단계 인포그래픽을 전부 만들었습니다</b> — 왼쪽 레일에서 단계를 눌러 확인하세요.</p>
+      <span class="go">열기 →</span>
+    </a>
+    <a class="screen" href="library.html">
+      <span class="label">04</span>
+      <h3>저장소</h3>
+      <p>관찰 저장소와 질문 저장소. 두 줄 캡처로 던져두고, 자주 적은 것부터 문제로 키웁니다. 사고 케이스 목록도 여기 있습니다.</p>
+      <span class="go">열기 →</span>
+    </a>
+    <a class="screen" href="portfolio.html">
+      <span class="label">05</span>
+      <h3>전체 도식과 결과물</h3>
+      <p>10단계를 한 장으로 본 뒤, 같은 기록을 포트폴리오 · 분석 글 · 면접 답변 · 기획서로 변환합니다. 문장마다 원본 단계로 되짚을 수 있습니다.</p>
+      <span class="go">열기 →</span>
+    </a>
+  </div>
+
+  <div class="rule-head"><span class="label">설계 문서</span></div>
+  <div class="screens">
+    <a class="screen" href="../01_NAMING.md"><h3>서비스명 후보</h3><p>LogicFlow로 확정. 검토했던 6개 후보와 판단 근거를 남겨둡니다.</p><span class="go">열기 →</span></a>
+    <a class="screen" href="../02_IA_AND_PAGES.md"><h3>정보 구조와 화면 설계</h3><p>사이트맵, 화면별 책임, 단계별 인포그래픽 규격, 상태 정의.</p><span class="go">열기 →</span></a>
+    <a class="screen" href="../03_DESIGN_SYSTEM.md"><h3>디자인 시스템</h3><p>색·타이포·컴포넌트·도식 언어와 사용 규칙.</p><span class="go">열기 →</span></a>
+    <a class="screen" href="../04_TEMPLATES_AND_DATA.md"><h3>템플릿 · 플랜 · 데이터</h3><p>모듈별 단계 구성, 1일/1주/1개월 플랜, 저장소 데이터 모델.</p><span class="go">열기 →</span></a>
+  </div>
+
+  <div class="rule-head"><span class="label">기본 색</span></div>
+  <div class="swatches">
+    <div class="sw"><div class="chip-c" style="background:var(--paper)"></div><div class="meta"><div class="nm">Paper 배경</div><div class="hx">#F6F7F9</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--surface-2)"></div><div class="meta"><div class="nm">Surface 2</div><div class="hx">#F0F2F6</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--ink)"></div><div class="meta"><div class="nm">Ink 본문</div><div class="hx">#1B2430</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--muted)"></div><div class="meta"><div class="nm">Muted 보조</div><div class="hx">#66717F</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--deep)"></div><div class="meta"><div class="nm">주색 스틸 블루</div><div class="hx">#2A5A87</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--attn)"></div><div class="meta"><div class="nm">주의 테라코타</div><div class="hx">#B05A3C</div></div></div>
+  </div>
+  <p class="note" style="margin-top:16px">채도를 전반적으로 낮추고 본문 대비를 올렸습니다. 강조는 <b>테라코타 하나</b>이고, 논리 공백과 코치의 지적에만 씁니다.
+  이전 시안의 형광 노랑연두는 눈이 피로해 걷어냈습니다.</p>
+
+  <div class="rule-head"><span class="label">의미 태그 — 작업 화면 내용 전용</span></div>
+  <div class="swatches">
+    <div class="sw"><div class="chip-c" style="background:var(--fact)"></div><div class="meta"><div class="nm">사실</div><div class="hx">#2E6B58</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--interp)"></div><div class="meta"><div class="nm">해석</div><div class="hx">#8A6A1F</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--hypo)"></div><div class="meta"><div class="nm">가설</div><div class="hx">#5B4AA0</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--evid)"></div><div class="meta"><div class="nm">근거</div><div class="hx">#1F6D93</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--unknown)"></div><div class="meta"><div class="nm">미확인</div><div class="hx">#6B7480</div></div></div>
+    <div class="sw"><div class="chip-c" style="background:var(--attn)"></div><div class="meta"><div class="nm">논리 공백</div><div class="hx">#B05A3C</div></div></div>
+  </div>
+  <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:14px">
+    <span class="tag t-fact">사실</span><span class="tag t-interp">해석</span><span class="tag t-hypo">가설</span>
+    <span class="tag t-evid">근거</span><span class="tag t-unknown">미확인</span><span class="tag t-gap">논리 공백</span><span class="tag t-plain">분류</span>
+  </div>
+
+  <div class="rule-head"><span class="label">카테고리 색 — 탐색·선택 화면 전용</span></div>
+  <p class="lede" style="max-width:62ch;margin-bottom:18px">메뉴가 전부 같은 색이라 구분이 안 되던 문제를 세 개의 독립된 체계로 나눴습니다.
+  의미 태그와는 <b>모양이 다르고(알약 vs 색 막대) 쓰이는 화면도 다릅니다.</b> 같은 자리에 함께 나오지 않습니다.</p>
+
+  <div class="grouphead"><span class="bar" style="background:var(--fam-str)"></span><h3>훈련 계열 — 10단계를 네 묶음으로</h3></div>
+  <div class="row" style="flex-wrap:wrap;gap:8px">
+    <span class="cat c-def">정의 · 01–03</span>
+    <span class="cat c-str">구조 · 04</span>
+    <span class="cat c-val">검증 · 05–07</span>
+    <span class="cat c-exp">표현 · 08–10</span>
+  </div>
+  <p class="small" style="margin-top:10px">참고 자료의 “문제 정의 → 구조화·가설 → 근거 기반 의사결정 → 글·말·포트폴리오 표현” 네 훈련을 그대로 색으로 옮겼습니다.</p>
+
+  <div class="grouphead"><span class="bar" style="background:var(--lv3)"></span><h3>난이도 — 색과 개수를 함께</h3></div>
+  <div class="row" style="flex-wrap:wrap;gap:16px">
+    <span class="lv" style="color:var(--lv1)">입문 <span class="pips"><i class="on"></i><i></i><i></i><i></i></span></span>
+    <span class="lv" style="color:var(--lv2)">기본 <span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+    <span class="lv" style="color:var(--lv3)">심화 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+    <span class="lv" style="color:var(--lv4)">도전 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+  </div>
+  <p class="small" style="margin-top:10px">난이도는 순서가 있는 값이라 색만으로 두지 않고 채워진 막대 개수로도 읽히게 했습니다. 색맹이어도 구분됩니다.</p>
+
+  <div class="grouphead"><span class="bar" style="background:var(--sec-commerce)"></span><h3>산업 — 주제를 고를 때</h3></div>
+  <div class="row" style="flex-wrap:wrap;gap:8px">
+    <span class="cat c-commerce">커머스</span><span class="cat c-fintech">핀테크</span><span class="cat c-content">콘텐츠·OTT</span>
+    <span class="cat c-saas">B2B SaaS</span><span class="cat c-platform">플랫폼·O2O</span><span class="cat c-hr">HR·교육</span>
+  </div>
+  <p class="small" style="margin-top:10px">문제 유형(전환율 하락, 지표 설계 등)은 색을 주지 않고 회색 칩으로 둡니다. 축을 셋으로 제한해야 화면이 무지개가 되지 않습니다.</p>
+
+  <div class="rule-head"><span class="label">타이포그래피</span></div>
+  <div class="typerow">
+    <div class="k">Display — Bricolage Grotesque · 라틴/숫자 전용</div>
+    <div class="display" style="font-size:38px">LogicFlow 04 / 10</div>
+  </div>
+  <div class="typerow">
+    <div class="k">Heading — IBM Plex Sans KR 700 · 한글 제목</div>
+    <div style="font-size:26px;font-weight:700;letter-spacing:-.02em">문제를 겹치지 않게, 빠짐없이 나눕니다</div>
+  </div>
+  <div class="typerow">
+    <div class="k">Body — IBM Plex Sans KR 400</div>
+    <p style="font-size:15px">3단계에서 정의한 한 줄 문제를 3~5개 영역으로 쪼갭니다. 어디부터 손댈지는 쪼개고 나서 보입니다.</p>
+  </div>
+  <div class="typerow">
+    <div class="k">Utility — IBM Plex Mono · 라벨/지표/단계 키</div>
+    <div class="label">STEP 04 · PROBLEM_STRUCTURING · 4 / 7</div>
+  </div>
+
+  <div class="rule-head"><span class="label">색 사용 규칙</span></div>
+  <div class="scrollx">
+    <table>
+      <thead><tr><th>체계</th><th>어디에</th><th>모양</th><th>축</th></tr></thead>
+      <tbody>
+        <tr><td>의미 태그</td><td>작업 화면 안의 내용</td><td>알약 + 점</td><td>사실 · 해석 · 가설 · 근거 · 미확인 · 공백</td></tr>
+        <tr><td>훈련 계열</td><td>시작 화면, 단계 레일</td><td>왼쪽 색 막대</td><td>정의 · 구조 · 검증 · 표현</td></tr>
+        <tr><td>난이도</td><td>모듈 카드, 케이스 목록</td><td>색 + 막대 개수</td><td>입문 → 도전 (순서 있음)</td></tr>
+        <tr><td>산업</td><td>주제 선택, 케이스 목록</td><td>왼쪽 색 막대</td><td>6종</td></tr>
+        <tr><td>주색 스틸 블루</td><td>버튼, 활성 상태, 링크</td><td>면 채움</td><td>—</td></tr>
+        <tr><td>주의 테라코타</td><td>논리 공백, 코치 지적</td><td>테두리 + 옅은 배경</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note" style="margin-top:16px">한 화면에 색 체계는 최대 두 개만 등장합니다. 작업 화면에는 의미 태그 + 훈련 계열, 시작 화면에는 훈련 계열 + 난이도 + 산업이 나오고 의미 태그는 나오지 않습니다.</p>
+
+</div>
+
+<footer class="foot">
+  <div class="wrap">
+    <p class="tiny">참고 자료: <code>E:\thinking_flow\references\논리적 사고력 키우기_Insight.md</code> · <code>논리적 사고 훈련 시스템 구조안.pdf</code> · <code>E:\thinking_flow\docs\</code> (읽기만 함)</p>
+  </div>
+</footer>
+<script src="theme.js"></script>
+</body>
+</html>

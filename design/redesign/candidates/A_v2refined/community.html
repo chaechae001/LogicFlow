@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>커뮤니티 — LogicFlow</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+  .ctabs{display:flex;gap:8px;border-bottom:1px solid var(--rule);margin:var(--gap-l) 0 0;overflow-x:auto}
+  .ctabs button{border:0;background:transparent;padding:14px 18px;font-size:14.5px;cursor:pointer;color:var(--muted);
+                border-bottom:2px solid transparent;display:flex;align-items:center;gap:8px;white-space:nowrap}
+  .ctabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--deep)}
+  .cpane{display:none;padding-top:var(--gap-l)} .cpane[data-on]{display:block}
+
+  /* 미니 논리 체인 — 카드 안에 케이스 전체 진행을 한 줄로 */
+  .mini{display:flex;gap:3px;margin-top:14px}
+  .mini i{flex:1;height:7px;border-radius:2px;background:var(--rule);display:block;position:relative}
+  .mini i.on{background:var(--deep)}
+  .mini i.ask{background:var(--attn)}
+  .mini i.gap{background:var(--attn-soft)}
+
+  .feed{display:grid;gap:16px}
+  .post{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-lg);padding:24px 26px;
+        display:grid;gap:14px;transition:border-color .15s,transform .15s}
+  .post:hover{border-color:var(--rule-strong);transform:translateY(-1px)}
+  .who{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .av{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-size:17px;flex:none;
+      background:var(--surface-2);border:1px solid var(--rule)}
+  .who .nm{font-size:14px;font-weight:600}
+  .who .role{font-size:12.5px;color:var(--muted)}
+  .post h3{font-size:18px;line-height:1.5}
+  .post .ask{border:1px solid var(--attn);border-left-width:3px;background:var(--attn-bg);border-radius:var(--r);
+             padding:12px 15px;font-size:14px;line-height:1.8}
+  .post .foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--rule)}
+  .stat{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+
+  /* 상세 — 단계별 피드백 */
+  .detail{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-xl);overflow:hidden}
+  .detail > header{padding:26px 30px;border-bottom:1px solid var(--rule);background:var(--surface-2)}
+  .stagecard{padding:24px 30px;border-bottom:1px solid var(--rule)}
+  .stagecard:last-child{border-bottom:0}
+  .stagecard.focus{background:var(--attn-bg)}
+  .sc-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .sc-body{font-size:15px;line-height:1.95;color:var(--ink-2);max-width:70ch}
+
+  .comments{margin-top:20px;display:grid;gap:12px}
+  .cmt{display:flex;gap:12px}
+  .cmt .bubble{flex:1;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);padding:13px 16px}
+  .cmt .bubble .top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:7px}
+  .cmt .bubble p{font-size:14px;line-height:1.85}
+  .cmt .acts{display:flex;gap:14px;margin-top:10px}
+  .cmt .acts button{border:0;background:transparent;color:var(--muted);font-size:12.5px;cursor:pointer;
+                    display:inline-flex;gap:5px;align-items:center;padding:0}
+  .cmt .acts button:hover{color:var(--deep)}
+
+  .composer{margin-top:18px;border:1px solid var(--rule-strong);border-radius:var(--r);background:var(--surface);padding:16px 18px}
+  .composer textarea{width:100%;border:0;background:transparent;outline:0;resize:vertical;min-height:66px;
+                     font-size:15px;line-height:1.9}
+  .composer textarea::placeholder{color:var(--faint)}
+  .composer .bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+
+  /* 공개 범위 */
+  .vis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .visopt{text-align:left;border:1px solid var(--rule);background:var(--surface);border-radius:var(--r);
+          padding:16px 18px;cursor:pointer}
+  .visopt[aria-pressed="true"]{border-color:var(--deep);box-shadow:inset 0 0 0 1px var(--deep);background:var(--deep-wash)}
+  .visopt b{display:block;font-size:14.5px;margin-top:8px}
+  .visopt span{display:block;font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.7}
+
+  /* 프로필 */
+  .strengths{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+  .st-card{border:1px solid var(--rule);border-left:3px solid var(--rule-strong);border-radius:var(--r);padding:16px 18px;background:var(--surface)}
+  .st-card .v{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-top:6px;font-variant-numeric:tabular-nums}
+  .st-card .d{font-size:12.5px;color:var(--muted);margin-top:4px}
+
+  .rulebox{display:grid;gap:10px}
+  .rulebox div{display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.8}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <a class="mark" href="index.html"><span class="lf"></span>LogicFlow</a>
+    <nav class="nav">
+      <a href="landing.html">소개</a>
+      <a href="start.html">훈련 시작</a>
+      <a href="workspace.html">작업 화면</a>
+      <a href="library.html">저장소</a>
+      <a href="portfolio.html">포트폴리오</a>
+      <a href="community.html" aria-current="page">커뮤니티</a>
+    </nav>
+    <button class="thm" id="thm" aria-label="다크 모드 전환" style="margin-left:14px">🌙</button>
+  </div>
+</div>
+
+<div class="wrap" style="padding-top:var(--gap-xl);padding-bottom:var(--gap-2xl)">
+
+  <div class="spread" style="align-items:flex-end;flex-wrap:wrap;gap:24px">
+    <div class="read">
+      <span class="label label-deep"><span class="emo">🤝</span> 커뮤니티</span>
+      <h1 style="margin-top:14px">완성된 답이 아니라, 생각의 흐름을 보여줍니다</h1>
+      <p class="lede" style="margin-top:16px">10단계 중 <b>막힌 단계 하나만</b> 지정해서 물어볼 수 있습니다.
+      답을 받는 게 아니라 좋은 질문을 받는 곳입니다.</p>
+    </div>
+    <a class="btn" href="#req"><span class="emo">🙋</span> 내 흐름 피드백 요청하기</a>
+  </div>
+
+  <div class="ctabs" role="tablist">
+    <button role="tab" aria-selected="true" data-c="c-feed"><span class="emo">🔎</span> 둘러보기</button>
+    <button role="tab" aria-selected="false" data-c="c-one"><span class="emo">💬</span> 흐름 하나 열어보기</button>
+    <button role="tab" aria-selected="false" data-c="c-req"><span class="emo">🙋</span> 피드백 요청</button>
+    <button role="tab" aria-selected="false" data-c="c-me"><span class="emo">👤</span> 내 활동</button>
+  </div>
+
+  <!-- ================= 둘러보기 ================= -->
+  <section class="cpane" id="c-feed" data-on>
+    <div class="chips" style="margin-bottom:var(--gap)">
+      <button class="chip" aria-pressed="true">🙋 도움이 필요한 흐름</button>
+      <button class="chip">✨ 이번 주 좋은 흐름</button>
+      <button class="chip">🧩 내 직무</button>
+      <button class="chip">🌱 입문</button>
+      <button class="chip">📌 문제 정의</button>
+      <button class="chip">🌳 문제 분해</button>
+    </div>
+
+    <div class="feed">
+
+      <article class="post">
+        <div class="who">
+          <span class="av">🦊</span>
+          <div><div class="nm">여우비</div><div class="role">데이터 분석 · 취준 3개월차</div></div>
+          <span class="cat c-commerce" style="margin-left:auto">🛒 커머스</span>
+          <span class="lv" style="color:var(--lv2)">🌿 기본 <span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+        </div>
+        <h3>무료배송 기준을 올렸더니 장바구니 이탈이 늘었다</h3>
+        <div class="mini" aria-label="10단계 중 6단계 진행, 04단계 피드백 요청">
+          <i class="on"></i><i class="on"></i><i class="on"></i><i class="ask"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="ask">
+          <b>🌳 04 문제 분해에서 막혔습니다.</b><br>
+          가격 · UX · 배송 셋으로 나눴는데 자꾸 겹치는 느낌이에요. 기준을 잘못 잡은 걸까요?
+        </div>
+        <div class="foot">
+          <span class="stat"><span class="emo">💬</span> 피드백 7</span>
+          <span class="stat"><span class="emo">❓</span> 받은 질문 12</span>
+          <span class="stat"><span class="emo">🕒</span> 2시간 전</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" data-open="c-one">흐름 보고 질문 남기기</button>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="who">
+          <span class="av">🐢</span>
+          <div><div class="nm">느린거북</div><div class="role">서비스 기획 · 재직 2년차</div></div>
+          <span class="cat c-saas" style="margin-left:auto">🧩 B2B SaaS</span>
+          <span class="lv" style="color:var(--lv4)">🏔️ 도전 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        </div>
+        <h3>도입 후 30일 안에 핵심 기능을 안 쓴 계정이 절반</h3>
+        <div class="mini"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="gap"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+        <div class="ask">
+          <b>🪞 10단계까지 완주했습니다.</b><br>
+          회고에서 스스로 찾은 빈틈은 “07 대안 비교에 비용 기준을 안 넣은 것”입니다. 더 있을까요?
+        </div>
+        <div class="foot">
+          <span class="stat"><span class="emo">💬</span> 피드백 14</span>
+          <span class="stat"><span class="emo">👍</span> 도움 됐다 22</span>
+          <span class="stat"><span class="emo">🕒</span> 어제</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" data-open="c-one">흐름 보고 질문 남기기</button>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="who">
+          <span class="av">🐳</span>
+          <div><div class="nm">고래밥</div><div class="role">개발 → PM 전환 준비</div></div>
+          <span class="cat c-content" style="margin-left:auto">🎬 콘텐츠</span>
+          <span class="lv" style="color:var(--lv1)">🌱 입문 <span class="pips"><i class="on"></i><i></i><i></i><i></i></span></span>
+        </div>
+        <h3>첫 주 시청 완료율이 낮은데 뭐부터 봐야 할지 모르겠다</h3>
+        <div class="mini"><i class="on"></i><i class="ask"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="ask">
+          <b>👀 02 현상 관찰에서 막혔습니다.</b><br>
+          사실이랑 해석을 나누라는데, 제가 쓴 게 다 해석 같아요. 어디까지가 사실인가요?
+        </div>
+        <div class="foot">
+          <span class="stat"><span class="emo">💬</span> 피드백 3</span>
+          <span class="stat"><span class="emo">🌱</span> 첫 케이스</span>
+          <span class="stat"><span class="emo">🕒</span> 30분 전</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" data-open="c-one">흐름 보고 질문 남기기</button>
+        </div>
+      </article>
+
+    </div>
+
+    <p class="note" style="margin-top:var(--gap-l)">피드백을 남기면 그 질문이 <b>내 질문 저장소</b>에도 함께 쌓입니다.
+    남을 봐주는 일이 곧 내 훈련이 됩니다.</p>
+  </section>
+
+  <!-- ================= 흐름 하나 열어보기 ================= -->
+  <section class="cpane" id="c-one">
+    <div class="detail">
+      <header>
+        <div class="who">
+          <span class="av">🦊</span>
+          <div><div class="nm">여우비</div><div class="role">데이터 분석 · 취준 3개월차</div></div>
+          <span class="cat c-commerce" style="margin-left:auto">🛒 커머스</span>
+          <span class="cat c-str">🌳 구조 계열에서 막힘</span>
+        </div>
+        <h2 style="margin-top:16px">무료배송 기준을 올렸더니 장바구니 이탈이 늘었다</h2>
+        <div class="mini" style="max-width:520px"><i class="on"></i><i class="on"></i><i class="on"></i><i class="ask"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <p class="small" style="margin-top:12px">10단계 중 6단계 진행 · 🌳 04 문제 분해에 피드백 요청 중</p>
+      </header>
+
+      <div class="stagecard">
+        <div class="sc-head">
+          <span class="cat c-def">🎯 01 목적·맥락</span>
+          <span class="tag t-plain">읽기만</span>
+        </div>
+        <p class="sc-body">무료배송 기준을 3만 원에서 4만 원으로 올린 뒤 객단가는 올랐지만 주문 수가 줄었다.
+        분기 목표는 총 거래액이라 둘을 같이 봐야 한다.</p>
+      </div>
+
+      <div class="stagecard">
+        <div class="sc-head">
+          <span class="cat c-def">📌 03 문제 정의</span>
+          <span class="tag t-plain">읽기만</span>
+        </div>
+        <p class="sc-body">4만 원을 못 채운 장바구니를 가진 사용자가 결제하려는 시점에
+        배송비를 피하려고 상품을 더 담을지 고민하다가, 무엇을 더 담을지 몰라 장바구니를 닫는다.</p>
+      </div>
+
+      <div class="stagecard focus">
+        <div class="sc-head">
+          <span class="cat c-str">🌳 04 문제 분해</span>
+          <span class="tag t-gap">🙋 여기에 피드백 요청</span>
+        </div>
+        <ul class="tree" style="margin-bottom:16px">
+          <li><span class="node node-root">이탈이 늘어난 이유</span>
+            <ul>
+              <li><span class="node">가격 · 혜택</span></li>
+              <li><span class="node">UX · 안내</span></li>
+              <li><span class="node">배송 정책</span></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="sc-body">가격 · UX · 배송 셋으로 나눴는데 “배송비 안내 문구”가 UX인지 배송 정책인지 헷갈립니다.</p>
+
+        <div class="comments">
+          <div class="cmt">
+            <span class="av">🐢</span>
+            <div class="bubble">
+              <div class="top">
+                <b style="font-size:13.5px">느린거북</b>
+                <span class="tag t-plain">🔀 다른 기준 제안</span>
+                <span class="tiny" style="margin-left:auto">1시간 전</span>
+              </div>
+              <p>세 가지가 <b>서로 다른 층위</b>라서 겹치는 것 같아요. “가격”은 조건이고 “UX”는 표현 방식이고 “배송 정책”은 다시 조건이에요.
+              사용자가 장바구니에서 하는 행동 순서(담기 → 금액 확인 → 추가 담기 결정 → 결제)로 나눠보면 어떨까요?</p>
+              <div class="acts">
+                <button><span class="emo">👍</span> 도움 됐어요 6</button>
+                <button><span class="emo">❓</span> 질문 저장소에 담기</button>
+                <button><span class="emo">💬</span> 답글</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="cmt">
+            <span class="av">🐧</span>
+            <div class="bubble">
+              <div class="top">
+                <b style="font-size:13.5px">펭귄씨</b>
+                <span class="tag t-plain">🕳️ 놓친 관점</span>
+                <span class="tiny" style="margin-left:auto">40분 전</span>
+              </div>
+              <p>기준을 올리기 전부터 이탈하던 사람과, 올린 뒤에 새로 이탈한 사람이 섞여 있지 않나요?
+              가지 하나에 <mark>“정책 변경 전후”</mark>를 넣으면 원인이 갈릴 것 같습니다.</p>
+              <div class="acts">
+                <button><span class="emo">👍</span> 도움 됐어요 9</button>
+                <button><span class="emo">❓</span> 질문 저장소에 담기</button>
+                <button><span class="emo">💬</span> 답글</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="cmt">
+            <span class="av">🦊</span>
+            <div class="bubble" style="border-color:var(--deep-line);background:var(--deep-wash)">
+              <div class="top">
+                <b style="font-size:13.5px">여우비</b>
+                <span class="tag t-plain">✍️ 작성자</span>
+                <span class="tiny" style="margin-left:auto">20분 전</span>
+              </div>
+              <p>행동 순서로 다시 나눠봤더니 겹치는 게 사라졌어요. “정책 변경 전후”는 가지가 아니라 <b>비교 축</b>으로 두는 게 맞겠네요. 둘 다 반영했습니다.</p>
+              <div class="acts"><button><span class="emo">🔗</span> 수정한 04단계 보기</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <textarea placeholder="질문으로 남겨주세요. 정답을 알려주기보다 “왜 이렇게 나눴는지” 묻는 편이 훨씬 도움이 됩니다."></textarea>
+          <div class="bar">
+            <span class="label">유형</span>
+            <div class="chips">
+              <button class="chip" aria-pressed="true">❓ 근거가 궁금</button>
+              <button class="chip">🔀 다른 기준 제안</button>
+              <button class="chip">🕳️ 놓친 관점</button>
+              <button class="chip">👍 구조가 좋다</button>
+              <button class="chip">✍️ 표현 제안</button>
+            </div>
+            <button class="btn btn-sm" style="margin-left:auto">피드백 남기기</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stagecard">
+        <div class="sc-head">
+          <span class="cat c-val">💡 05 가설 설정</span>
+          <span class="tag t-plain">읽기만</span>
+        </div>
+        <p class="sc-body">원인 가설 3개와 백업 1개를 세워뒀습니다. 04가 정리되면 다시 볼 예정입니다.</p>
+      </div>
+    </div>
+
+    <div class="rule-head"><span class="label">피드백 규칙</span></div>
+    <div class="rulebox read">
+      <div><span class="emo emo-lg">❓</span><span><b>정답 대신 질문을 남깁니다.</b> “이렇게 하세요”보다 “왜 이렇게 나누셨어요?”가 상대의 사고를 키웁니다.</span></div>
+      <div><span class="emo emo-lg">📍</span><span><b>단계를 지정해서 답니다.</b> 글 전체가 아니라 04단계에 달린 피드백이라 나중에 원본과 함께 되짚을 수 있습니다.</span></div>
+      <div><span class="emo emo-lg">🔒</span><span><b>기업명·내부 수치는 가리고 올립니다.</b> 올리기 전 자동으로 한 번 확인해 드립니다.</span></div>
+      <div><span class="emo emo-lg">🤲</span><span><b>남을 봐준 만큼 내 훈련이 됩니다.</b> 남긴 질문은 내 질문 저장소에도 쌓입니다.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 피드백 요청 ================= -->
+  <section class="cpane" id="c-req">
+    <div id="req" class="read" style="margin-bottom:var(--gap-l)">
+      <h2>어디에서 막혔는지만 알려주세요</h2>
+      <p class="lede" style="margin-top:12px">흐름 전체를 공개하지 않아도 됩니다. 물어보고 싶은 단계만 열 수 있습니다.</p>
+    </div>
+
+    <div class="card" style="padding:26px 28px">
+      <span class="label">1 · 어떤 케이스인가요</span>
+      <div class="chips" style="margin-top:12px">
+        <button class="chip" aria-pressed="true">🧩 도입 후 30일 미사용 계정 절반</button>
+        <button class="chip">🛒 무료배송 기준 인상</button>
+        <button class="chip">🎬 첫 주 시청 완료율</button>
+      </div>
+
+      <span class="label" style="display:block;margin-top:var(--gap-l)">2 · 어느 단계에서 막혔나요</span>
+      <div class="chips" style="margin-top:12px">
+        <button class="chip">🎯 01</button><button class="chip">👀 02</button><button class="chip">📌 03</button>
+        <button class="chip" aria-pressed="true">🌳 04 문제 분해</button><button class="chip">💡 05</button>
+        <button class="chip">🔍 06</button><button class="chip">⚖️ 07</button><button class="chip">🛠️ 08</button>
+        <button class="chip">📊 09</button><button class="chip">🪞 10</button>
+      </div>
+
+      <span class="label" style="display:block;margin-top:var(--gap-l)">3 · 무엇이 막혔나요</span>
+      <div class="field" style="margin-top:12px">
+        <textarea style="min-height:88px" placeholder="예) 가격 · UX · 배송 셋으로 나눴는데 자꾸 겹칩니다. 기준을 잘못 잡은 걸까요?"></textarea>
+      </div>
+
+      <span class="label" style="display:block;margin-top:var(--gap-l)">4 · 누구에게 보일까요</span>
+      <div class="vis" style="margin-top:12px">
+        <button class="visopt"><span class="emo emo-lg">🔒</span><b>나만 보기</b><span>공유하지 않습니다. 기본값입니다.</span></button>
+        <button class="visopt"><span class="emo emo-lg">🔗</span><b>링크 아는 사람</b><span>링크를 받은 사람만. 언제든 철회할 수 있습니다.</span></button>
+        <button class="visopt" aria-pressed="true"><span class="emo emo-lg">👥</span><b>내 스터디 그룹</b><span>같은 그룹 5명에게만 보입니다.</span></button>
+        <button class="visopt"><span class="emo emo-lg">🌐</span><b>전체 공개</b><span>둘러보기 피드에 올라갑니다.</span></button>
+      </div>
+
+      <div class="card" style="margin-top:var(--gap);background:var(--attn-bg);border-color:var(--attn);border-left-width:3px">
+        <div class="row" style="align-items:flex-start">
+          <span class="emo emo-lg">🛡️</span>
+          <div>
+            <b style="font-size:14.5px">올리기 전 한 번 확인합니다</b>
+            <p class="small" style="margin-top:6px">기업명 2건, 내부 수치로 보이는 값 1건을 찾았습니다. 가릴지 그대로 둘지 정해주세요.</p>
+            <div class="btn-row" style="margin-top:12px">
+              <button class="btn btn-sm">가리고 올리기</button>
+              <button class="btn btn-ghost btn-sm">직접 확인하기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:var(--gap-l)">
+        <button class="btn"><span class="emo">🙋</span> 피드백 요청 올리기</button>
+        <button class="btn btn-ghost">미리보기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 내 활동 ================= -->
+  <section class="cpane" id="c-me">
+    <div class="who" style="margin-bottom:var(--gap-l)">
+      <span class="av" style="width:52px;height:52px;font-size:26px;border-radius:16px">🐢</span>
+      <div>
+        <div class="nm" style="font-size:18px">느린거북</div>
+        <div class="role">서비스 기획 · 재직 2년차 · 가입 후 74일</div>
+      </div>
+    </div>
+
+    <span class="label">계열별 활동 — 무엇을 많이 훈련했나</span>
+    <div class="strengths" style="margin-top:14px">
+      <div class="st-card" style="border-left-color:var(--fam-def)">
+        <span class="cat c-def">🎯 정의</span><div class="v">18</div><div class="d">완료한 단계 · 가장 자주</div>
+      </div>
+      <div class="st-card" style="border-left-color:var(--fam-str)">
+        <span class="cat c-str">🌳 구조</span><div class="v">11</div><div class="d">평균 소요 18분 → 9분</div>
+      </div>
+      <div class="st-card" style="border-left-color:var(--fam-val)">
+        <span class="cat c-val">🔍 검증</span><div class="v">7</div><div class="d">판단 기준 미입력이 잦음</div>
+      </div>
+      <div class="st-card" style="border-left-color:var(--fam-exp)">
+        <span class="cat c-exp">✍️ 표현</span><div class="v">4</div><div class="d">가장 적게 한 계열</div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:16px">숫자는 전부 계산식과 원본 단계로 되짚을 수 있습니다. 다른 사람과 비교하는 순위는 만들지 않습니다.</p>
+
+    <div class="rule-head"><span class="label">내가 남긴 피드백</span></div>
+    <div class="feed">
+      <article class="post" style="gap:12px">
+        <div class="who">
+          <span class="tag t-plain">🔀 다른 기준 제안</span>
+          <span class="tiny" style="margin-left:auto">1시간 전 · 여우비의 흐름 04단계</span>
+        </div>
+        <p style="font-size:14.5px;line-height:1.9">“세 가지가 서로 다른 층위라서 겹치는 것 같아요. 사용자가 장바구니에서 하는 행동 순서로 나눠보면 어떨까요?”</p>
+        <div class="foot"><span class="stat"><span class="emo">👍</span> 도움 됐다 6</span><span class="stat"><span class="emo">✅</span> 작성자가 반영함</span></div>
+      </article>
+      <article class="post" style="gap:12px">
+        <div class="who">
+          <span class="tag t-plain">❓ 근거가 궁금</span>
+          <span class="tiny" style="margin-left:auto">어제 · 고래밥의 흐름 02단계</span>
+        </div>
+        <p style="font-size:14.5px;line-height:1.9">“‘시청 완료율이 낮다’는 무엇과 비교한 값인가요? 지난 시즌과 비교한 건지, 업계 평균인지에 따라 문제가 완전히 달라질 것 같습니다.”</p>
+        <div class="foot"><span class="stat"><span class="emo">👍</span> 도움 됐다 11</span><span class="stat"><span class="emo">❓</span> 내 질문 저장소에 저장됨</span></div>
+      </article>
+    </div>
+  </section>
+
+</div>
+
+<footer class="foot">
+  <div class="wrap">
+    <p class="tiny">커뮤니티는 검토 중인 기능입니다. 기본 공개 범위는 비공개이며, 공유는 언제든 철회할 수 있습니다.</p>
+  </div>
+</footer>
+
+<script>
+  const root = document.documentElement, thm = document.getElementById('thm');
+  const saved = localStorage.getItem('lf-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  function isDark(){ const s = root.getAttribute('data-theme');
+    return s === 'dark' || (!s && matchMedia('(prefers-color-scheme:dark)').matches); }
+  function syncThm(){ thm.textContent = isDark() ? '☀️' : '🌙'; }
+  syncThm();
+  thm.addEventListener('click', () => {
+    const n = isDark() ? 'light' : 'dark';
+    root.setAttribute('data-theme', n); localStorage.setItem('lf-theme', n); syncThm();
+  });
+
+  function openPane(id){
+    document.querySelectorAll('.ctabs button').forEach(x => x.setAttribute('aria-selected', String(x.dataset.c === id)));
+    document.querySelectorAll('.cpane').forEach(p => p.removeAttribute('data-on'));
+    document.getElementById(id).setAttribute('data-on','');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  document.querySelectorAll('.ctabs button').forEach(b => b.addEventListener('click', () => openPane(b.dataset.c)));
+  document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => openPane(b.dataset.open)));
+
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if(!c) return;
+    const g = c.closest('.chips'); if(!g) return;
+    const multi = g.querySelectorAll('.chip[aria-pressed="true"]').length > 1;
+    if (multi) c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    else g.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === c)));
+  });
+  document.querySelectorAll('.vis').forEach(g => g.addEventListener('click', e => {
+    const o = e.target.closest('.visopt'); if(!o) return;
+    g.querySelectorAll('.visopt').forEach(x => x === o ? x.setAttribute('aria-pressed','true') : x.removeAttribute('aria-pressed'));
+  }));
+</script>
+</body>
+</html>

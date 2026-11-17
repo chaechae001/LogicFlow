@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>훈련 시작 — Think Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,700;12..96,75..100,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+  .step-sheet{border:1px solid var(--rule);border-radius:var(--r-lg);background:var(--surface);overflow:hidden;margin-bottom:18px}
+  .step-sheet > header{display:flex;align-items:flex-start;gap:16px;padding:20px 24px 18px;border-bottom:1px solid var(--rule)}
+  .step-sheet > header .n{font-family:var(--display);font-size:30px;font-weight:800;letter-spacing:-.05em;line-height:1;color:var(--rule-strong)}
+  .step-sheet > header h2{font-size:19px}
+  .step-sheet > header p{color:var(--muted);font-size:13.5px;margin-top:4px}
+  .step-sheet .body{padding:22px 24px 26px}
+
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px}
+  .opt{text-align:left;border:1px solid var(--rule);background:var(--surface);border-radius:var(--r);padding:14px 16px;cursor:pointer;
+       transition:border-color .14s ease,transform .14s ease}
+  .opt:hover{border-color:var(--rule-strong);transform:translateY(-1px)}
+  .opt[aria-pressed="true"]{border-color:var(--deep);box-shadow:inset 0 0 0 1px var(--deep);background:var(--deep-wash)}
+  .opt b{display:block;font-size:14.5px;letter-spacing:-.01em}
+  .opt .desc{display:block;font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.6}
+  .opt .cat{margin-bottom:7px}
+  .opt .steps{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--deep);margin-top:8px;display:block}
+
+  .srcbar{display:flex;gap:6px;border:1px solid var(--rule);border-radius:var(--r);padding:4px;background:var(--surface-2);margin-bottom:18px;flex-wrap:wrap}
+  .srcbar button{border:0;background:transparent;padding:8px 15px;border-radius:5px;font-size:13px;cursor:pointer;color:var(--muted)}
+  .srcbar button[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
+  .src{display:none}
+  .src[data-on]{display:block}
+
+  .issue{display:flex;gap:14px;border:1px solid var(--rule);border-radius:var(--r);padding:14px 16px;margin-bottom:9px;
+         background:var(--surface);cursor:pointer;align-items:flex-start}
+  .issue:hover{border-color:var(--deep)}
+  .issue .when{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--faint);white-space:nowrap;padding-top:3px}
+  .issue h4{font-size:14.5px;letter-spacing:-.01em}
+  .issue p{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.65}
+  .issue .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+
+  .sectors{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px;margin-bottom:16px}
+  .sector{border:1px solid var(--rule);border-left:4px solid var(--rule-strong);border-radius:var(--r);
+          padding:12px 14px;background:var(--surface);cursor:pointer;text-align:left}
+  .sector:hover{border-color:var(--rule-strong)}
+  .sector b{font-size:13.5px;display:block}
+  .sector span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .sector[aria-pressed="true"]{box-shadow:inset 0 0 0 1px currentColor}
+  .s-commerce{border-left-color:var(--sec-commerce);color:var(--sec-commerce)}
+  .s-fintech {border-left-color:var(--sec-fintech); color:var(--sec-fintech)}
+  .s-content {border-left-color:var(--sec-content); color:var(--sec-content)}
+  .s-saas    {border-left-color:var(--sec-saas);    color:var(--sec-saas)}
+  .s-platform{border-left-color:var(--sec-platform);color:var(--sec-platform)}
+  .s-hr      {border-left-color:var(--sec-hr);      color:var(--sec-hr)}
+  .sector span{color:var(--muted)}
+
+  /* 단계 선택 — 계열별로 묶어서 색으로 구분 */
+  .stagepick{display:grid;gap:12px}
+  .sp-group{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-left:12px;border-left:3px solid var(--rule-strong)}
+  .sp-group:nth-child(1){border-left-color:var(--fam-def)}
+  .sp-group:nth-child(2){border-left-color:var(--fam-str)}
+  .sp-group:nth-child(3){border-left-color:var(--fam-val)}
+  .sp-group:nth-child(4){border-left-color:var(--fam-exp)}
+  .sp-group > .cat{min-width:56px;justify-content:center}
+  .sp-def[aria-pressed="true"]{border-color:var(--fam-def);background:var(--fam-def-bg);color:var(--fam-def)}
+  .sp-str[aria-pressed="true"]{border-color:var(--fam-str);background:var(--fam-str-bg);color:var(--fam-str)}
+  .sp-val[aria-pressed="true"]{border-color:var(--fam-val);background:var(--fam-val-bg);color:var(--fam-val)}
+  .sp-exp[aria-pressed="true"]{border-color:var(--fam-exp);background:var(--fam-exp-bg);color:var(--fam-exp)}
+
+  /* summary bar */
+  .summary{position:sticky;bottom:0;z-index:20;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-lg);
+           padding:14px 20px;display:flex;align-items:center;gap:16px;box-shadow:var(--shadow-lg);flex-wrap:wrap}
+  .summary .slot-sum{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .summary .slot-sum .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .summary .slot-sum .v{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:30ch}
+  .summary .btn{margin-left:auto}
+  @media(max-width:700px){.summary .btn{margin-left:0;width:100%;justify-content:center}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <a class="mark" href="index.html"><i></i>THINK FLOW</a>
+    <nav class="nav">
+      <a href="landing.html">소개</a>
+      <a href="start.html" aria-current="page">훈련 시작</a>
+      <a href="workspace.html">작업 화면</a>
+      <a href="library.html">저장소</a>
+      <a href="portfolio.html">포트폴리오</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap" style="padding-top:44px;padding-bottom:56px">
+
+  <div style="max-width:60ch;margin-bottom:30px">
+    <span class="label label-deep">훈련 시작</span>
+    <h1 style="margin-top:10px;font-size:clamp(26px,3.6vw,38px)">세 가지만 정하면 바로 시작합니다</h1>
+    <p class="lede" style="margin-top:12px">무엇을 훈련할지, 무엇을 가지고 훈련할지, 몇 단계로 할지. 시작한 뒤에도 언제든 바꿀 수 있습니다.</p>
+  </div>
+
+  <!-- ============ 01 목적 ============ -->
+  <section class="step-sheet">
+    <header>
+      <span class="n">01</span>
+      <div>
+        <span class="label">무엇을 훈련할까요</span>
+        <h2 style="margin-top:3px">약한 단계만 골라도 됩니다</h2>
+        <p>목적에 따라 거치는 단계가 달라집니다. 전체를 다 하지 않아도 훈련이 됩니다.</p>
+      </div>
+    </header>
+    <div class="body">
+      <div class="famlegend">
+        <span class="cat c-def">정의</span><span class="cat c-str">구조</span><span class="cat c-val">검증</span><span class="cat c-exp">표현</span>
+        <span class="tiny" style="align-self:center">모든 훈련은 이 네 계열 중 하나에 속합니다</span>
+      </div>
+
+      <div class="grouphead"><span class="bar" style="background:var(--fam-def)"></span><h3>정의 — 문제를 찾고 좁힌다</h3><span class="cnt">2</span></div>
+      <div class="opts">
+        <button class="opt fam fam-def" aria-pressed="false"><span class="cat c-def">정의</span><b>문제를 정의하고 싶어요</b><span class="desc">막연한 불편을 한 줄 문제로 바꾸는 연습</span><span class="steps">관찰 → 문제 정의 · 2단계 · 15분</span><span class="lv" style="color:var(--lv1);margin-top:8px">입문 <span class="pips"><i class="on"></i><i></i><i></i><i></i></span></span></button>
+        <button class="opt fam fam-def" aria-pressed="false"><span class="cat c-def">정의</span><b>매일 관찰을 쌓고 싶어요</b><span class="desc">사실과 해석을 가르는 10분 훈련</span><span class="steps">현상 관찰 · 1단계 · 10분</span><span class="lv" style="color:var(--lv1);margin-top:8px">입문 <span class="pips"><i class="on"></i><i></i><i></i><i></i></span></span></button>
+      </div>
+
+      <div class="grouphead"><span class="bar" style="background:var(--fam-str)"></span><h3>구조 — 복잡한 것을 나눈다</h3><span class="cnt">1</span></div>
+      <div class="opts">
+        <button class="opt fam fam-str" aria-pressed="false"><span class="cat c-str">구조</span><b>생각을 구조화하고 싶어요</b><span class="desc">MECE와 로직 트리로 쪼개는 연습</span><span class="steps">문제 분해 · 1단계 심화 · 20분</span><span class="lv" style="color:var(--lv2);margin-top:8px">기본 <span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></span></span></button>
+      </div>
+
+      <div class="grouphead"><span class="bar" style="background:var(--fam-val)"></span><h3>검증 — 근거로 판단한다</h3><span class="cnt">2</span></div>
+      <div class="opts">
+        <button class="opt fam fam-val" aria-pressed="false"><span class="cat c-val">검증</span><b>가설과 검증을 연습하고 싶어요</b><span class="desc">주장을 검증 가능한 형태로 바꾸기</span><span class="steps">가설 → 검증 · 2단계 · 25분</span><span class="lv" style="color:var(--lv2);margin-top:8px">기본 <span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></span></span></button>
+        <button class="opt fam fam-val" aria-pressed="false"><span class="cat c-val">검증</span><b>의사결정을 연습하고 싶어요</b><span class="desc">대안을 공통 기준으로 비교하기</span><span class="steps">대안 → 결정 · 2단계 · 20분</span><span class="lv" style="color:var(--lv3);margin-top:8px">심화 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span></button>
+      </div>
+
+      <div class="grouphead"><span class="bar" style="background:var(--fam-exp)"></span><h3>표현 — 남이 읽을 수 있게 만든다</h3><span class="cnt">4</span></div>
+      <div class="opts">
+        <button class="opt fam fam-exp" aria-pressed="true"><span class="cat c-exp">표현</span><b>논리적인 글을 쓰고 싶어요</b><span class="desc">사고 흐름을 독자가 읽을 수 있게 재구성</span><span class="steps">전체 흐름 → 글쓰기 · 7단계 · 60분</span><span class="lv" style="color:var(--lv3);margin-top:8px">심화 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span></button>
+        <button class="opt fam fam-exp" aria-pressed="false"><span class="cat c-exp">표현</span><b>면접 답변을 준비하고 싶어요</b><span class="desc">경험형·케이스형 답변 구조 만들기</span><span class="steps">압축 흐름 · 5단계 · 30분</span><span class="lv" style="color:var(--lv3);margin-top:8px">심화 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span></button>
+        <button class="opt fam fam-exp" aria-pressed="false"><span class="cat c-exp">표현</span><b>포트폴리오를 만들고 싶어요</b><span class="desc">한 문제를 끝까지 밀어붙이기</span><span class="steps">전체 · 10단계 · 4주</span><span class="lv" style="color:var(--lv4);margin-top:8px">도전 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span></button>
+        <button class="opt fam fam-exp" aria-pressed="false"><span class="cat c-exp">표현</span><b>지난 프로젝트를 회고하고 싶어요</b><span class="desc">결과가 아니라 사고 과정의 오류 찾기</span><span class="steps">결과 평가 → 회고 · 2단계 · 25분</span><span class="lv" style="color:var(--lv2);margin-top:8px">기본 <span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></span></span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 주제 ============ -->
+  <section class="step-sheet">
+    <header>
+      <span class="n">02</span>
+      <div>
+        <span class="label">무엇을 가지고 훈련할까요</span>
+        <h2 style="margin-top:3px">주제 고르기</h2>
+        <p>직접 적어도 되고, 오늘 올라온 이슈나 분야별 문제를 골라도 됩니다.</p>
+      </div>
+    </header>
+    <div class="body">
+      <div class="srcbar" role="tablist">
+        <button role="tab" aria-selected="true" data-src="src-mine">내 문제 적기</button>
+        <button role="tab" aria-selected="false" data-src="src-issue">오늘의 이슈</button>
+        <button role="tab" aria-selected="false" data-src="src-sector">산업 · 기업</button>
+        <button role="tab" aria-selected="false" data-src="src-lib">내 저장소에서</button>
+      </div>
+
+      <div class="src" id="src-mine" data-on>
+        <div class="field">
+          <textarea placeholder="요즘 계속 걸리는 문제를 한두 줄로 적어보세요. 정리되지 않아도 괜찮습니다. 다듬는 건 첫 단계에서 같이 합니다.&#10;예) 우리 팀 주간 회의가 늘 한 시간을 넘기는데 결론이 안 남는다."></textarea>
+        </div>
+        <div class="row" style="margin-top:12px;flex-wrap:wrap">
+          <span class="label">어디서 발견했나요</span>
+          <div class="chips">
+            <button class="chip" aria-pressed="true">업무</button>
+            <button class="chip" aria-pressed="false">내가 쓰는 서비스</button>
+            <button class="chip" aria-pressed="false">뉴스·리포트</button>
+            <button class="chip" aria-pressed="false">프로젝트</button>
+            <button class="chip" aria-pressed="false">일상</button>
+          </div>
+        </div>
+        <p class="note" style="margin-top:14px">지금 문제처럼 안 보여도 괜찮습니다. 관찰 한 줄이면 1단계를 시작할 수 있습니다.</p>
+      </div>
+
+      <div class="src" id="src-issue">
+        <p class="small" style="margin-bottom:14px">이번 주 실무에서 논의되는 이슈를 문제 형태로 다듬어 올려둡니다. 공개 자료 기준이며, 확인이 필요한 정보는 따로 표시합니다.</p>
+
+        <button class="issue">
+          <span class="when">11.28</span>
+          <div>
+            <h4>커머스 플랫폼의 무료배송 기준 인상 이후 장바구니 이탈</h4>
+            <p>기준 금액이 오른 뒤 장바구니 단계 이탈이 늘었다는 업계 논의가 이어지고 있습니다. 얼마를 더 담게 만들지, 아니면 기준을 되돌릴지가 쟁점입니다.</p>
+            <div class="meta"><span class="cat c-commerce">커머스</span><span class="lv" style="color:var(--lv2)">기본 <span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></span></span><span class="tag t-plain">전환율</span><span class="tag t-fact">공개 자료 3건</span><span class="tag t-unknown">내부 수치 없음</span></div>
+          </div>
+        </button>
+
+        <button class="issue">
+          <span class="when">11.27</span>
+          <div>
+            <h4>구독 서비스의 연간권 전환율이 월간권 인상 후 정체</h4>
+            <p>월간 요금을 올리면 연간권으로 옮겨갈 거라고 봤지만 실제로는 해지가 늘었습니다. 가격 구조와 해지 시점의 관계를 다시 봐야 하는 상황입니다.</p>
+            <div class="meta"><span class="cat c-content">콘텐츠·구독</span><span class="lv" style="color:var(--lv3)">심화 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span><span class="tag t-plain">가격</span><span class="tag t-plain">리텐션</span><span class="tag t-unknown">가상 설정 포함</span></div>
+          </div>
+        </button>
+
+        <button class="issue">
+          <span class="when">11.25</span>
+          <div>
+            <h4>사내 AI 도구 도입 6개월, 문서 생산량은 늘었지만 의사결정 속도는 그대로</h4>
+            <p>산출물은 빨라졌는데 회의와 승인 단계에서 시간이 그대로 소모됩니다. 병목이 생성이 아니라 합의에 있는지 확인해야 합니다.</p>
+            <div class="meta"><span class="cat c-hr">HR·업무</span><span class="lv" style="color:var(--lv1)">입문 <span class="pips"><i class="on"></i><i></i><i></i><i></i></span></span><span class="tag t-plain">생산성</span><span class="tag t-plain">프로세스</span></div>
+          </div>
+        </button>
+      </div>
+
+      <div class="src" id="src-sector">
+        <span class="label">산업 고르기</span>
+        <div class="sectors" style="margin-top:10px">
+          <button class="sector s-commerce"><b>커머스</b><span>전환 · 물류 · 리뷰 · 가격</span></button>
+          <button class="sector s-fintech"><b>핀테크</b><span>온보딩 · 신뢰 · 규제</span></button>
+          <button class="sector s-content"><b>콘텐츠 · OTT</b><span>탐색 · 이탈 · 추천</span></button>
+          <button class="sector s-saas" aria-pressed="true"><b>B2B SaaS</b><span>도입 · 활성화 · 이탈</span></button>
+          <button class="sector s-platform"><b>플랫폼 · O2O</b><span>공급 · 매칭 · 품질</span></button>
+          <button class="sector s-hr"><b>HR · 교육</b><span>학습 완주 · 평가</span></button>
+        </div>
+        <span class="label">문제 유형 고르기</span>
+        <div class="chips" style="margin-top:10px">
+          <button class="chip" aria-pressed="true">지표가 떨어졌다</button>
+          <button class="chip" aria-pressed="false">새 기능을 넣을까</button>
+          <button class="chip" aria-pressed="false">우선순위를 못 정하겠다</button>
+          <button class="chip" aria-pressed="false">운영이 반복된다</button>
+          <button class="chip" aria-pressed="false">지표를 새로 설계해야 한다</button>
+          <button class="chip" aria-pressed="false">실험 결과가 애매하다</button>
+        </div>
+        <p class="note" style="margin-top:16px">산업과 유형을 고르면 그 조합의 실무형 문제 3~5개와, 같은 유형을 어떻게 풀었는지 보여주는 예시 흐름이 함께 제공됩니다.</p>
+      </div>
+
+      <div class="src" id="src-lib">
+        <p class="small" style="margin-bottom:12px">저장소에 쌓아둔 관찰 중에서 고릅니다. 여러 번 언급한 것부터 보여줍니다.</p>
+        <button class="issue">
+          <span class="when">3회</span>
+          <div>
+            <h4>첫 주문 쿠폰 만료가 7일인데 재방문 중앙값은 24일</h4>
+            <p>11월에 세 번 적어둔 관찰입니다. 사실로 표시되어 있고 출처는 업무입니다.</p>
+            <div class="meta"><span class="tag t-fact">사실</span><span class="tag t-plain">업무</span></div>
+          </div>
+        </button>
+        <button class="issue">
+          <span class="when">2회</span>
+          <div>
+            <h4>주간 회의가 한 시간을 넘기는데 결정은 안 남는다</h4>
+            <p>같은 불편을 두 번 기록했습니다. 아직 사실과 해석이 섞여 있습니다.</p>
+            <div class="meta"><span class="tag t-interp">해석</span><span class="tag t-plain">업무</span></div>
+          </div>
+        </button>
+        <a class="btn btn-ghost btn-sm" href="library.html" style="margin-top:10px">저장소 전체 열기</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 템플릿 ============ -->
+  <section class="step-sheet">
+    <header>
+      <span class="n">03</span>
+      <div>
+        <span class="label">몇 단계로 할까요</span>
+        <h2 style="margin-top:3px">템플릿과 깊이</h2>
+        <p>같은 문제도 20분짜리와 4주짜리로 다르게 다룰 수 있습니다.</p>
+      </div>
+    </header>
+    <div class="body">
+      <div class="opts">
+        <button class="opt" aria-pressed="false">
+          <span class="lv" style="color:var(--lv1)">입문 <span class="pips"><i class="on"></i><i></i><i></i><i></i></span></span>
+          <b style="margin-top:7px">하루 한 단계</b>
+          <span class="desc">오늘 약한 단계 하나만 짧게. 요일별로 다른 단계를 권합니다.</span>
+          <span class="steps">1~2단계 · 20분</span>
+        </button>
+        <button class="opt" aria-pressed="true">
+          <span class="lv" style="color:var(--lv2)">기본 <span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+          <b style="margin-top:7px">주간 전체 흐름</b>
+          <span class="desc">맥락부터 검증 계획까지 한 바퀴 돌고 분석 글로 마무리합니다.</span>
+          <span class="steps">7단계 · 60분</span>
+        </button>
+        <button class="opt" aria-pressed="false">
+          <span class="lv" style="color:var(--lv4)">도전 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+          <b style="margin-top:7px">월간 포트폴리오</b>
+          <span class="desc">10단계 전부. 4주에 나눠 진행하고 결과물까지 만듭니다.</span>
+          <span class="steps">10단계 · 4주</span>
+        </button>
+        <button class="opt" aria-pressed="false">
+          <span class="lv" style="color:var(--lv3)">심화 <span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+          <b style="margin-top:7px">면접 케이스</b>
+          <span class="desc">제한 시간 안에 목표 정의부터 리스크까지 압축합니다.</span>
+          <span class="steps">5단계 · 30분</span>
+        </button>
+      </div>
+
+      <div style="margin-top:22px;padding-top:20px;border-top:1px solid var(--rule)">
+        <div class="spread" style="margin-bottom:12px">
+          <span class="label">포함되는 단계 — 직접 켜고 끌 수 있습니다</span>
+          <span class="tiny">7개 선택됨</span>
+        </div>
+
+        <div class="stagepick">
+          <div class="sp-group">
+            <span class="cat c-def">정의</span>
+            <div class="chips">
+              <button class="chip sp-def" aria-pressed="true">01 목적·맥락</button>
+              <button class="chip sp-def" aria-pressed="true">02 현상 관찰</button>
+              <button class="chip sp-def" aria-pressed="true">03 문제 정의</button>
+            </div>
+          </div>
+          <div class="sp-group">
+            <span class="cat c-str">구조</span>
+            <div class="chips"><button class="chip sp-str" aria-pressed="true">04 문제 분해</button></div>
+          </div>
+          <div class="sp-group">
+            <span class="cat c-val">검증</span>
+            <div class="chips">
+              <button class="chip sp-val" aria-pressed="true">05 가설 설정</button>
+              <button class="chip sp-val" aria-pressed="true">06 근거·검증</button>
+              <button class="chip sp-val" aria-pressed="false">07 대안·의사결정</button>
+            </div>
+          </div>
+          <div class="sp-group">
+            <span class="cat c-exp">표현</span>
+            <div class="chips">
+              <button class="chip sp-exp" aria-pressed="false">08 해결안 설계</button>
+              <button class="chip sp-exp" aria-pressed="false">09 결과 평가</button>
+              <button class="chip sp-exp" aria-pressed="true">10 결론·회고</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="note" style="margin-top:14px">순서는 바꿀 수 없습니다. 앞 단계의 답이 뒤 단계 질문의 재료로 쓰이기 때문입니다.</p>
+      </div>
+
+      <div style="margin-top:22px;padding-top:20px;border-top:1px solid var(--rule)">
+        <span class="label">도움 정도</span>
+        <div class="chips" style="margin-top:10px">
+          <button class="chip" aria-pressed="false">안내 많이 — 질문마다 예시와 힌트</button>
+          <button class="chip" aria-pressed="true">보통 — 요청할 때만 힌트</button>
+          <button class="chip" aria-pressed="false">거의 없이 — 마지막에 점검만</button>
+        </div>
+        <p class="tiny" style="margin-top:10px">반복할수록 낮추는 것을 권합니다. 같은 단계를 세 번 넘게 하면 자동으로 한 칸 낮추자고 제안합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ summary ============ -->
+  <div class="summary">
+    <div class="slot-sum"><span class="k">목적</span><span class="v">논리적인 글쓰기</span></div>
+    <div class="slot-sum"><span class="k">주제</span><span class="v">주간 회의가 결론 없이 길어진다</span></div>
+    <div class="slot-sum"><span class="k">템플릿</span><span class="v">주간 전체 흐름 · 7단계</span></div>
+    <div class="slot-sum"><span class="k">예상 시간</span><span class="v">약 60분</span></div>
+    <a class="btn" href="workspace.html">1단계부터 시작</a>
+  </div>
+
+  <p class="tiny" style="margin-top:16px;text-align:center">시작하기 전에 답을 미리 요구하지 않습니다. 첫 생각은 1단계 안에서 씁니다.</p>
+</div>
+
+<script>
+  document.querySelectorAll('.srcbar button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.srcbar button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    document.querySelectorAll('.src').forEach(p => p.removeAttribute('data-on'));
+    document.getElementById(b.dataset.src).setAttribute('data-on','');
+  }));
+  document.querySelectorAll('.opts').forEach(g => g.addEventListener('click', e => {
+    const o = e.target.closest('.opt'); if(!o) return;
+    g.querySelectorAll('.opt').forEach(x => x.setAttribute('aria-pressed', String(x === o)));
+  }));
+  document.querySelectorAll('.sectors').forEach(g => g.addEventListener('click', e => {
+    const s = e.target.closest('.sector'); if(!s) return;
+    g.querySelectorAll('.sector').forEach(x => x === s ? x.setAttribute('aria-pressed','true') : x.removeAttribute('aria-pressed'));
+  }));
+  document.querySelectorAll('.chips').forEach(g => g.addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if(!c) return;
+    const multi = g.querySelectorAll('.chip[aria-pressed="true"]').length > 1;
+    if (multi) c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    else g.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === c)));
+  }));
+</script>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>작업 화면 (Outline) — Logic Flow</title>
+<link rel="stylesheet" href="app.css">
+<style>
+  .appbar{position:sticky;top:0;z-index:60;background:var(--surface);border-bottom:1px solid var(--rule)}
+  .appbar-in{height:62px;display:flex;align-items:center;gap:14px;padding:0 22px}
+  .paneltgl{display:inline-flex;gap:5px}
+  .paneltgl button{border:1px solid var(--rule-strong);background:var(--surface);border-radius:var(--r-sm);
+     width:30px;height:30px;display:grid;place-items:center;cursor:pointer;font-size:14px;color:var(--muted);line-height:1}
+  .paneltgl button[aria-pressed="false"]{background:var(--surface-2);color:var(--faint)}
+  .paneltgl button[aria-pressed="true"]{border-color:var(--deep);color:var(--deep);background:var(--deep-wash)}
+  .casechip{display:flex;align-items:center;gap:10px;min-width:0}
+  .casechip .title{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:26ch}
+  .prog{display:flex;align-items:center;gap:12px;margin-left:auto}
+  @media(max-width:1000px){.casechip .title{display:none}}
+
+  .app{display:grid;grid-template-columns:var(--cw-l,286px) minmax(0,1fr) var(--cw-r,332px);align-items:start;min-height:calc(100vh - 62px)}
+  .app.hide-l{--cw-l:0px} .app.hide-r{--cw-r:0px}
+  .zone-l,.zone-r{position:sticky;top:62px;max-height:calc(100vh - 62px);overflow-y:auto;overflow-x:hidden}
+  .zone-l{border-right:1px solid var(--rule);background:var(--surface-2)}
+  .zone-c{padding:0 46px 96px;min-width:0}
+  .zone-r{border-left:1px solid var(--rule);background:var(--surface)}
+  .app.hide-l .zone-l,.app.hide-r .zone-r{opacity:0;pointer-events:none;overflow:hidden;border:0}
+  @media(max-width:1180px){.zone-r{display:none}}
+  @media(max-width:840px){.app{grid-template-columns:1fr}.zone-l{display:none}.zone-c{padding:0 20px 72px}}
+
+  /* ---- 좌측: 살아있는 사고 아웃라인 ---- */
+  .outhead{padding:18px 16px 10px;position:sticky;top:0;background:var(--surface-2);z-index:2}
+  .outhead .label{font-weight:700;color:var(--ink-2);font-size:12px;letter-spacing:.05em}
+  .outhead .sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .outline{padding:4px 10px 22px;list-style:none;margin:0}
+  .outline .stage{margin-top:3px}
+  .stagebtn{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:0;background:transparent;
+     border-radius:var(--r-sm);cursor:pointer;text-align:left;font-size:13.5px;color:var(--ink-2);font-weight:600}
+  .stagebtn:hover{background:var(--surface)}
+  .stagebtn .n{font-family:var(--mono);font-size:10.5px;color:var(--faint);width:16px}
+  .stagebtn .fam{width:3px;height:15px;border-radius:2px;background:var(--rule-strong);flex:none}
+  .stage.f-def .fam{background:var(--fam-def)} .stage.f-str .fam{background:var(--fam-str)}
+  .stage.f-val .fam{background:var(--fam-val)} .stage.f-exp .fam{background:var(--fam-exp)}
+  .stage.done .stagebtn{color:var(--muted)} .stage.done .stagebtn .n{color:var(--fact)}
+  .stage.now .stagebtn{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+  .stage .chev{margin-left:auto;color:var(--faint);font-size:11px;transition:transform .15s}
+  .stage.open .chev{transform:rotate(90deg)}
+  .kids{list-style:none;margin:2px 0 6px;padding:0 0 0 26px;display:none}
+  .stage.open .kids{display:block}
+  .kid{position:relative}
+  .kidbtn{width:100%;display:flex;align-items:center;gap:7px;padding:6px 9px;border:0;background:transparent;
+     border-radius:var(--r-sm);cursor:pointer;text-align:left;font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  .kidbtn:hover{background:var(--surface)}
+  .kidbtn.sel{background:var(--deep-wash);color:var(--deep);font-weight:600}
+  .kidbtn .dot{width:5px;height:5px;border-radius:50%;background:var(--rule-strong);flex:none}
+  .kidbtn.sel .dot{background:var(--deep)}
+  .kid.sub .kidbtn{padding-left:22px;font-size:12px;color:var(--muted)}
+  .kidadd{border:1px dashed var(--rule-strong);background:transparent;border-radius:var(--r-sm);
+     padding:5px 10px;font-size:12px;color:var(--muted);cursor:pointer;margin:3px 0 0 9px}
+  .kidadd:hover{border-color:var(--deep);color:var(--deep)}
+  .outfoot{padding:12px 16px;border-top:1px solid var(--rule);font-size:12px;color:var(--muted);line-height:1.7}
+  .outfoot b{color:var(--ink-2)}
+
+  /* ---- 가운데: 노드 작성 ---- */
+  .nodehead{position:sticky;top:62px;z-index:6;display:flex;align-items:center;gap:12px;
+     padding:14px 0 11px;border-bottom:1px solid var(--rule);
+     background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(8px)}
+  .nodehead .icon{width:38px;height:38px;border-radius:11px;background:var(--surface);border:1px solid var(--rule);
+     display:grid;place-items:center;font-size:19px;flex:none;box-shadow:var(--shadow)}
+  .nodehead > div{min-width:0;flex:1}
+  .nodehead h1{font-size:19px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nodehead .crumb{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nodehead .crumb b{color:var(--deep)}
+
+  .qbar{display:flex;align-items:center;gap:12px;padding:12px 15px;margin-top:20px;
+     background:var(--surface-2);border:1px solid var(--rule);border-radius:var(--r)}
+  .qbar .qk{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.08em;color:var(--deep);flex:none}
+  .qbar .qt{font-size:13.5px;color:var(--ink);font-weight:500}
+  .qbar .exbtn{margin-left:auto;flex:none;border:1px solid var(--rule-strong);background:var(--surface);
+     border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer;color:var(--muted)}
+  .qbar .exbtn[aria-expanded="true"]{border-color:var(--deep);color:var(--deep);background:var(--deep-wash)}
+
+  .exwrap{display:none;margin-top:12px} .exwrap[data-on]{display:block}
+  .exnote{border:1px solid var(--rule);border-left:3px solid var(--interp);border-radius:var(--r);
+     padding:14px 16px;background:var(--surface-2)}
+  .exnote .eh{display:flex;gap:8px;align-items:center;margin-bottom:9px}
+  .exnote p{font-size:13.5px;line-height:1.8;color:var(--ink-2)}
+  .exnote .why{margin-top:9px;padding-top:9px;border-top:1px dashed var(--rule);color:var(--muted);font-size:12.5px}
+
+  .writelab{display:flex;align-items:center;gap:8px;margin:24px 0 10px}
+  .writelab .label{font-weight:700;color:var(--ink-2);font-size:12px}
+  .editor{background:var(--surface);border:1px solid var(--rule-strong);border-radius:var(--r);
+     padding:18px 20px;min-height:150px;font-size:16px;line-height:2;outline:0}
+  .editor:focus{border-color:var(--deep);box-shadow:0 0 0 3px var(--deep-wash)}
+  .editor:empty::before{content:attr(data-ph);color:var(--faint)}
+  .nodemeta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .selftag{border:1px solid var(--rule-strong);background:var(--surface);border-radius:999px;
+     padding:5px 12px;font-size:12.5px;cursor:pointer;color:var(--muted)}
+  .selftag[aria-pressed="true"]{border-color:var(--deep);background:var(--deep-wash);color:var(--deep);font-weight:600}
+
+  /* ---- 우측 탭 ---- */
+  .rtabs{display:flex;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--surface);z-index:5}
+  .rtabs button{flex:1;border:0;background:transparent;padding:14px 4px;font-size:12.5px;color:var(--muted);cursor:pointer;
+     border-bottom:2px solid transparent;display:flex;align-items:center;justify-content:center;gap:5px}
+  .rtabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--deep)}
+  .rpane{display:none;padding:20px} .rpane[data-on]{display:block}
+  .chk{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.6;padding:11px 13px;border:1px solid var(--rule);
+     border-radius:var(--r);margin-bottom:9px;background:var(--surface)}
+  .chk.ok{border-left:3px solid var(--fact)} .chk.warn{border-left:3px solid var(--attn);background:var(--attn-bg)}
+  .chk .ic{flex:none}
+  .coachbtn{width:100%;text-align:left;border:1px solid var(--rule);background:var(--surface);border-radius:var(--r);
+     padding:12px 14px;cursor:pointer;margin-bottom:9px;font-size:13px}
+  .coachbtn:hover{border-color:var(--deep);background:var(--deep-wash)}
+  .coachbtn b{display:block;margin-bottom:3px} .coachbtn span{color:var(--muted);font-size:12px}
+  .pullitem{border:1px solid var(--rule);border-radius:var(--r);padding:12px 14px;margin-bottom:9px;background:var(--surface)}
+  .pullitem p{font-size:13px;line-height:1.6;margin-top:6px}
+
+  /* ---- 도식 연습장 (요구 8) ---- */
+  #p-draw{padding:0!important;display:none;flex-direction:column;height:calc(100vh - 62px - 49px)}
+  #p-draw[data-on]{display:flex}
+  .draw-tools{display:flex;gap:5px;padding:10px 12px;border-bottom:1px solid var(--rule);flex-wrap:wrap;background:var(--surface)}
+  .draw-tools button{border:1px solid var(--rule-strong);background:var(--surface);border-radius:var(--r-sm);
+     padding:6px 9px;font-size:12px;cursor:pointer;color:var(--ink-2);display:inline-flex;gap:5px;align-items:center;line-height:1}
+  .draw-tools button.on{border-color:var(--deep);color:var(--deep);background:var(--deep-wash);font-weight:600}
+  .draw-tools .sep{width:1px;background:var(--rule);margin:2px 3px}
+  .draw-canvas{position:relative;flex:1;min-height:300px;overflow:hidden;cursor:crosshair;
+     background-image:radial-gradient(var(--rule-strong) 1px,transparent 1px);background-size:18px 18px;background-color:var(--surface)}
+  .draw-svg{position:absolute;inset:0;pointer-events:none;z-index:1;color:var(--rule-strong)}
+  .dnode{position:absolute;z-index:2;background:var(--surface);border:1.5px solid var(--deep);border-radius:var(--r-sm);
+     padding:7px 12px;font-size:12.5px;color:var(--ink);cursor:move;box-shadow:var(--shadow);min-width:46px;text-align:center;
+     user-select:none;white-space:nowrap}
+  .dnode.dia{border-color:var(--attn)} .dnode.txt{border-style:dashed;border-color:var(--rule-strong);box-shadow:none;background:transparent}
+  .dnode.sel{outline:2px solid var(--deep);outline-offset:2px}
+  .draw-hint{padding:9px 13px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--rule);background:var(--surface-2);line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="appbar">
+  <div class="appbar-in">
+    <a class="mark" href="index.html"><span class="lf"></span>Logic Flow</a>
+    <div class="paneltgl">
+      <button id="tglL" aria-pressed="true" title="좌측 아웃라인 접기/펴기">⬅</button>
+      <button id="tglR" aria-pressed="true" title="우측 점검·코치 접기/펴기">➡</button>
+    </div>
+    <div class="casechip">
+      <span class="cat c-saas">B2B SaaS</span>
+      <span class="title">도입 후 30일 안에 핵심 기능을 안 쓴 계정이 절반</span>
+    </div>
+    <div class="prog">
+      <span class="mono" style="color:var(--muted)"><b>4</b> / 10</span>
+      <span class="meter" style="width:104px"><i style="width:40%"></i></span>
+      <button class="thm" id="thm" aria-label="다크 모드 전환">🌙</button>
+      <a class="btn btn-ghost btn-sm" href="portfolio.html">전체 도식</a>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ============ 좌: 사고 아웃라인 ============ -->
+  <aside class="zone-l">
+    <div class="outhead">
+      <span class="label">사고 아웃라인</span>
+      <p class="sub">지금 쓰는 내용이 전체 논리 어디에 속하는지 늘 보입니다.</p>
+    </div>
+    <ul class="outline" id="outline">
+      <li class="stage done f-def"><button class="stagebtn"><span class="fam"></span><span class="n">01</span> 목적·맥락</button></li>
+      <li class="stage done f-def"><button class="stagebtn"><span class="fam"></span><span class="n">02</span> 현상 관찰</button></li>
+      <li class="stage done f-def"><button class="stagebtn"><span class="fam"></span><span class="n">03</span> 문제 정의</button></li>
+      <li class="stage now open f-str">
+        <button class="stagebtn"><span class="fam"></span><span class="n">04</span> 문제 분해<span class="chev">▶</span></button>
+        <ul class="kids">
+          <li class="kid"><button class="kidbtn sel" data-node="도입 담당자" data-q="이 유형은 어디서 막히나요?"><span class="dot"></span> 도입 담당자</button></li>
+          <li class="kid sub"><button class="kidbtn" data-node="전파 자료 부재" data-q="이 항목을 더 쪼갤 수 있나요?"><span class="dot"></span> 전파 자료 부재</button></li>
+          <li class="kid sub"><button class="kidbtn" data-node="설명 시간 부족" data-q="이 항목을 더 쪼갤 수 있나요?"><span class="dot"></span> 설명 시간 부족</button></li>
+          <li class="kid"><button class="kidbtn" data-node="팀원" data-q="이 유형은 어디서 막히나요?"><span class="dot"></span> 팀원</button></li>
+          <li class="kid"><button class="kidbtn" data-node="관리자" data-q="이 유형은 어디서 막히나요?"><span class="dot"></span> 관리자</button></li>
+          <li><button class="kidadd" id="addKid">＋ 항목 추가</button></li>
+        </ul>
+      </li>
+      <li class="stage f-val"><button class="stagebtn"><span class="fam"></span><span class="n">05</span> 가설 설정</button></li>
+      <li class="stage f-val"><button class="stagebtn"><span class="fam"></span><span class="n">06</span> 근거·검증</button></li>
+      <li class="stage f-val"><button class="stagebtn"><span class="fam"></span><span class="n">07</span> 대안·결정</button></li>
+      <li class="stage f-exp"><button class="stagebtn"><span class="fam"></span><span class="n">08</span> 해결안 설계</button></li>
+      <li class="stage f-exp"><button class="stagebtn"><span class="fam"></span><span class="n">09</span> 결과 평가</button></li>
+      <li class="stage f-exp"><button class="stagebtn"><span class="fam"></span><span class="n">10</span> 결론·회고</button></li>
+    </ul>
+    <div class="outfoot">
+      계열 · <b>정의</b> 01–03 · <b>구조</b> 04 · <b>검증</b> 05–07 · <b>표현</b> 08–10<br>
+      쌓인 것 · 사실 <b>6</b> · 해석 <b>3</b> · 가설 <b>4</b> · 근거 <b>7</b>
+    </div>
+  </aside>
+
+  <!-- ============ 가운데: 노드 작성 ============ -->
+  <main class="zone-c">
+    <div class="nodehead">
+      <div class="icon">🌳</div>
+      <div>
+        <div class="crumb">04 문제 분해 · <b id="crumbNode">도입 담당자</b></div>
+        <h1 id="nodeTitle">‘도입 담당자’를 어떻게 볼까요</h1>
+      </div>
+    </div>
+
+    <div class="qbar">
+      <span class="qk">GUIDE</span>
+      <span class="qt" id="qText">이 유형은 어디서 막히나요?</span>
+      <button class="exbtn" id="exToggle" aria-expanded="false">예시 보기</button>
+    </div>
+
+    <div class="exwrap" id="exWrap">
+      <div class="exnote">
+        <div class="eh"><span class="tag t-plain">참고용</span><span class="tiny">프로세스 기준 분해</span></div>
+        <p>“전환율이 낮은 이유”를 <b>유입 → 폼 입력 → 인증</b>처럼 사용자가 지나는 순서로 나눕니다.</p>
+        <p class="why">순서로 나누면 가지끼리 겹치지 않습니다. 예시는 입력란에 채워지지 않으니, 먼저 직접 써 보세요.</p>
+      </div>
+    </div>
+
+    <div class="writelab"><span class="label">직접 작성</span><span class="tiny">이 노드에 대한 내 생각을 씁니다</span></div>
+    <div class="editor" contenteditable="true" data-ph="이 항목을 이렇게 나눈 이유와, 여기서 무엇이 막히는지 직접 적어보세요."></div>
+    <div class="nodemeta">
+      <span class="tiny" style="align-self:center">이 노드는 무엇인가요 —</span>
+      <button class="selftag" aria-pressed="true">🟢 사실</button>
+      <button class="selftag">🟡 해석</button>
+      <button class="selftag">🟣 가설</button>
+      <button class="selftag">⚠️ 근거 없음</button>
+    </div>
+
+    <div class="btn-row" style="margin-top:30px">
+      <button class="btn">이 노드 저장</button>
+      <button class="btn btn-ghost">다음 노드로 →</button>
+    </div>
+    <p class="note" style="margin-top:18px">아웃라인의 항목을 눌러 옮겨 다닐 수 있습니다. 비어 있는 노드는 10단계 회고에서 모아 보여드립니다.</p>
+  </main>
+
+  <!-- ============ 우: 점검 · 코치 · 저장소 · 도식화 ============ -->
+  <aside class="zone-r">
+    <div class="rtabs" role="tablist">
+      <button role="tab" aria-selected="true" data-pane="p-chk">🧭 구조 점검</button>
+      <button role="tab" aria-selected="false" data-pane="p-coach">💬 코치</button>
+      <button role="tab" aria-selected="false" data-pane="p-lib">🗄️ 저장소</button>
+      <button role="tab" aria-selected="false" data-pane="p-draw">✏️ 도식화</button>
+    </div>
+
+    <div class="rpane" id="p-chk" data-on>
+      <span class="label" style="font-weight:700;color:var(--ink-2)">MECE 점검</span>
+      <div style="margin-top:12px">
+        <div class="chk ok"><span class="ic">✓</span><span>가지 4개 — 권장 범위(3~5) 안에 있습니다.</span></div>
+        <div class="chk ok"><span class="ic">✓</span><span>상위 항목에 해결책이 섞이지 않았습니다.</span></div>
+        <div class="chk warn"><span class="ic">!</span><span>‘제품 자체’는 사용자 유형이 아닙니다. 기준이 둘로 섞였습니다.</span></div>
+        <div class="chk"><span class="ic">·</span><span>‘팀원 / 관리자’에 측정 지표가 아직 없습니다.</span></div>
+      </div>
+      <p class="tiny" style="margin-top:16px">점검은 지금 아웃라인 상태를 기준으로 갱신됩니다. 고칠지 말지는 직접 정합니다.</p>
+    </div>
+
+    <div class="rpane" id="p-coach">
+      <button class="coachbtn"><b>막혔어요</b><span>다음 한 줄을 여는 질문을 받습니다</span></button>
+      <button class="coachbtn"><b>더 넓게 보고 싶어요</b><span>빠졌을 수 있는 관점을 물어봅니다</span></button>
+      <button class="coachbtn"><b>이거 맞나요?</b><span>지금 쓴 내용의 논리 공백을 짚어줍니다</span></button>
+      <div class="note" style="margin-top:14px">코치는 답을 대신 쓰지 않습니다. 한 글자도 쓰지 않았을 때는 켜지지 않습니다.</div>
+    </div>
+
+    <div class="rpane" id="p-lib">
+      <span class="label" style="font-weight:700;color:var(--ink-2)">이 단계에 쓸 만한 질문</span>
+      <div class="pullitem"><span class="tag t-plain">질문 저장소</span><p>“이 분류에서 빠진 사람은 누구인가?”</p><button class="btn btn-ghost btn-sm" style="margin-top:9px">가져오기</button></div>
+      <div class="pullitem"><span class="tag t-fact">사실</span><p>“초대 시도 후 가입 완료 41%” — 11월 12일</p><button class="btn btn-ghost btn-sm" style="margin-top:9px">노드로 추가</button></div>
+      <a class="btn btn-ghost btn-sm" href="library.html" style="margin-top:12px">저장소 전체 열기</a>
+    </div>
+
+    <div class="rpane" id="p-draw">
+      <div class="draw-tools">
+        <button data-tool="rect" class="on">▭ 네모</button>
+        <button data-tool="diamond">◇ 분기</button>
+        <button data-tool="text">T 텍스트</button>
+        <span class="sep"></span>
+        <button data-tool="arrow">→ 화살표</button>
+        <button data-tool="move">✋ 이동</button>
+        <span class="sep"></span>
+        <button id="drawClear">🗑 지우기</button>
+      </div>
+      <div class="draw-canvas" id="drawCanvas">
+        <svg class="draw-svg" id="drawSvg"><defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker>
+        </defs></svg>
+      </div>
+      <div class="draw-hint">아웃라인으로 정리한 계층을 여기서 자유롭게 그려봅니다. 도형을 놓고 <b>화살표</b>로 잇고, 더블클릭으로 글자를 고치세요.</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+/* 테마 */
+const root = document.documentElement, thm = document.getElementById('thm');
+const saved = localStorage.getItem('lf-theme'); if (saved) root.setAttribute('data-theme', saved);
+function isDark(){ const s = root.getAttribute('data-theme'); return s === 'dark' || (!s && matchMedia('(prefers-color-scheme:dark)').matches); }
+function syncThm(){ thm.textContent = isDark() ? '☀️' : '🌙'; } syncThm();
+thm.addEventListener('click', () => { const n = isDark() ? 'light' : 'dark'; root.setAttribute('data-theme', n); localStorage.setItem('lf-theme', n); syncThm(); });
+
+/* 패널 토글 */
+const appEl = document.querySelector('.app');
+const tglL = document.getElementById('tglL'), tglR = document.getElementById('tglR');
+tglL.addEventListener('click', () => { appEl.classList.toggle('hide-l'); tglL.setAttribute('aria-pressed', String(!appEl.classList.contains('hide-l'))); });
+tglR.addEventListener('click', () => { appEl.classList.toggle('hide-r'); tglR.setAttribute('aria-pressed', String(!appEl.classList.contains('hide-r'))); });
+
+/* 우측 탭 */
+document.querySelectorAll('.rtabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.rtabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  document.querySelectorAll('.rpane').forEach(p => p.removeAttribute('data-on'));
+  document.getElementById(b.dataset.pane).setAttribute('data-on','');
+}));
+
+/* 아웃라인 노드 선택 → 가운데 갱신 */
+const nodeTitle = document.getElementById('nodeTitle'), crumbNode = document.getElementById('crumbNode'), qText = document.getElementById('qText');
+function selectKid(k){
+  document.querySelectorAll('.kidbtn').forEach(x => x.classList.remove('sel'));
+  k.classList.add('sel');
+  const name = (k.dataset.node || k.textContent).trim();
+  crumbNode.textContent = name;
+  nodeTitle.textContent = '‘' + name + '’를 어떻게 볼까요';
+  qText.textContent = k.dataset.q || '이 항목을 어떻게 나눌까요?';
+  document.querySelector('.editor').focus();
+}
+document.querySelectorAll('.kidbtn').forEach(k => k.addEventListener('click', () => selectKid(k)));
+/* 단계 펼치기 */
+document.querySelectorAll('.stagebtn').forEach(s => s.addEventListener('click', () => {
+  const st = s.closest('.stage'); if (st.querySelector('.kids')) st.classList.toggle('open');
+}));
+/* 항목 추가 */
+document.getElementById('addKid').addEventListener('click', () => {
+  const li = document.createElement('li'); li.className = 'kid';
+  const b = document.createElement('button'); b.className = 'kidbtn';
+  b.innerHTML = '<span class="dot"></span> 새 항목';
+  b.dataset.node = '새 항목'; b.dataset.q = '이 항목은 어디서 막히나요?';
+  li.appendChild(b);
+  const addLi = document.getElementById('addKid').closest('li');
+  addLi.parentElement.insertBefore(li, addLi);
+  b.addEventListener('click', () => selectKid(b));
+  selectKid(b);
+});
+
+/* 예시 토글 */
+const exToggle = document.getElementById('exToggle'), exWrap = document.getElementById('exWrap');
+exToggle.addEventListener('click', () => {
+  const on = exWrap.hasAttribute('data-on');
+  if (on){ exWrap.removeAttribute('data-on'); exToggle.setAttribute('aria-expanded','false'); exToggle.textContent = '예시 보기'; }
+  else { exWrap.setAttribute('data-on',''); exToggle.setAttribute('aria-expanded','true'); exToggle.textContent = '예시 닫기'; }
+});
+/* 노드 성격 태그 */
+document.querySelectorAll('.nodemeta').forEach(g => g.addEventListener('click', e => {
+  const b = e.target.closest('.selftag'); if(!b) return;
+  g.querySelectorAll('.selftag').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+}));
+
+/* 도식 연습장 */
+(function(){
+  const canvas = document.getElementById('drawCanvas'), svg = document.getElementById('drawSvg'); if(!canvas) return;
+  let tool = 'rect', arrowFrom = null; const edges = [];
+  document.querySelectorAll('.draw-tools button[data-tool]').forEach(b => b.addEventListener('click', () => {
+    tool = b.dataset.tool;
+    document.querySelectorAll('.draw-tools button[data-tool]').forEach(x => x.classList.toggle('on', x === b));
+    if (arrowFrom){ arrowFrom.classList.remove('sel'); arrowFrom = null; }
+  }));
+  document.getElementById('drawClear').addEventListener('click', () => { canvas.querySelectorAll('.dnode').forEach(n => n.remove()); edges.length = 0; arrowFrom = null; redraw(); });
+  function makeNode(x, y, kind, label){
+    const n = document.createElement('div');
+    n.className = 'dnode' + (kind === 'diamond' ? ' dia' : kind === 'text' ? ' txt' : '');
+    n.textContent = label || (kind === 'text' ? '텍스트' : kind === 'diamond' ? '분기' : '항목');
+    n.style.left = Math.max(0, x) + 'px'; n.style.top = Math.max(0, y) + 'px';
+    canvas.appendChild(n); bindNode(n); return n;
+  }
+  function bindNode(n){
+    n.addEventListener('mousedown', e => {
+      if (tool === 'arrow' || n.isContentEditable) return;
+      e.preventDefault();
+      const ox = e.clientX - n.offsetLeft, oy = e.clientY - n.offsetTop;
+      function mv(ev){ n.style.left = Math.max(0, ev.clientX - ox) + 'px'; n.style.top = Math.max(0, ev.clientY - oy) + 'px'; redraw(); }
+      function up(){ document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); }
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+    });
+    n.addEventListener('click', e => {
+      if (tool !== 'arrow') return; e.stopPropagation();
+      if (!arrowFrom){ arrowFrom = n; n.classList.add('sel'); }
+      else if (arrowFrom === n){ n.classList.remove('sel'); arrowFrom = null; }
+      else { edges.push({ from: arrowFrom, to: n }); arrowFrom.classList.remove('sel'); arrowFrom = null; redraw(); }
+    });
+    n.addEventListener('dblclick', e => { e.stopPropagation(); n.setAttribute('contenteditable','true'); n.focus();
+      const r = document.createRange(); r.selectNodeContents(n); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+    n.addEventListener('blur', () => n.setAttribute('contenteditable','false'));
+    n.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); n.blur(); } });
+  }
+  canvas.addEventListener('click', e => {
+    if (e.target !== canvas && e.target !== svg) return;
+    if (tool === 'move' || tool === 'arrow'){ if (arrowFrom){ arrowFrom.classList.remove('sel'); arrowFrom = null; } return; }
+    const r = canvas.getBoundingClientRect(); makeNode(e.clientX - r.left - 26, e.clientY - r.top - 15, tool);
+  });
+  function cen(n){ return { x: n.offsetLeft + n.offsetWidth / 2, y: n.offsetTop + n.offsetHeight / 2 }; }
+  function redraw(){
+    svg.querySelectorAll('line').forEach(l => l.remove());
+    edges.forEach(ed => { if (!ed.from.isConnected || !ed.to.isConnected) return;
+      const a = cen(ed.from), b = cen(ed.to);
+      const ln = document.createElementNS('http://www.w3.org/2000/svg','line');
+      ln.setAttribute('x1', a.x); ln.setAttribute('y1', a.y); ln.setAttribute('x2', b.x); ln.setAttribute('y2', b.y);
+      ln.setAttribute('stroke','currentColor'); ln.setAttribute('stroke-width','1.5'); ln.setAttribute('marker-end','url(#ah)');
+      svg.appendChild(ln);
+    });
+  }
+  const n1 = makeNode(28, 26, 'rect', '문제 영역'); const n2 = makeNode(28, 118, 'diamond', '기준으로 분기');
+  edges.push({ from: n1, to: n2 }); requestAnimationFrame(redraw);
+})();
+</script>
+</body>
+</html>

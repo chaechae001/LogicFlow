@@ -24,3 +24,21 @@ export {
   type ThinkingCaseRepository,
   type ThinkingCaseSummary,
 } from "./thinking-case-repository";
+export {
+  saveContextDraftInputSchema,
+  type SaveContextDraftInput,
+  type SaveContextDraftResult,
+  type V2ThinkingCaseBundle,
+  type V2ThinkingCaseRepository,
+} from "./v2-thinking-case-repository";
+export {
+  THINKING_FLOW_V2_STORAGE_KEY,
+  V2_LOCAL_STORAGE_SCHEMA_VERSION,
+  createEmptyV2LocalStorageData,
+  v2LocalStorageDataSchema,
+  type V2LocalStorageData,
+} from "./v2/storage-schema";
+export {
+  V2LocalStorageRepository,
+  type V2LocalStorageRepositoryDependencies,
+} from "./v2/v2-local-storage-repository";

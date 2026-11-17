@@ -1,7 +1,7 @@
 import type { PracticeCase, ThinkingCase } from "../../domain";
 import type {
   CreateCaseInput,
-  ThinkingCaseRepository,
+  V2ThinkingCaseRepository,
 } from "../../repositories";
 
 export const LOCAL_USER_ID = "local-user";
@@ -24,7 +24,7 @@ export function buildCreateCaseInput(
 }
 
 export async function startPracticeCase(
-  repository: ThinkingCaseRepository,
+  repository: Pick<V2ThinkingCaseRepository, "createCase">,
   practiceCase: PracticeCase,
 ): Promise<StartPracticeCaseResult> {
   const thinkingCase = await repository.createCase(
